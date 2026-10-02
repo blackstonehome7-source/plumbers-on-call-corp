@@ -1,0 +1,334 @@
+:root {
+  --cream: #f3eee5;
+  --cream-light: #fbf8f2;
+  --graphite: #1b1a18;
+  --muted: #69635a;
+  --gold: #a57931;
+  --gold-light: #d4b06c;
+  --line: rgba(39, 34, 27, 0.16);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--cream);
+  color: var(--graphite);
+  font-family: var(--font-sans), Arial, sans-serif;
+}
+
+a {
+  color: inherit;
+}
+
+.home {
+  isolation: isolate;
+  position: relative;
+  display: grid;
+  grid-template-rows: 1fr auto;
+  min-height: 100svh;
+  overflow: hidden;
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.6), transparent 42%),
+    radial-gradient(circle at 50% 38%, var(--cream-light) 0, var(--cream) 62%, #e9e1d5 100%);
+}
+
+.home::before {
+  position: absolute;
+  inset: 18px;
+  z-index: -1;
+  border: 1px solid var(--line);
+  content: "";
+  pointer-events: none;
+}
+
+.ambient {
+  position: absolute;
+  z-index: -1;
+  width: 38rem;
+  aspect-ratio: 1;
+  border: 1px solid rgba(165, 121, 49, 0.18);
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.ambient::after {
+  position: absolute;
+  inset: 22px;
+  border: 1px solid rgba(165, 121, 49, 0.1);
+  border-radius: inherit;
+  content: "";
+}
+
+.ambientOne {
+  top: -25rem;
+  left: -19rem;
+}
+
+.ambientTwo {
+  right: -23rem;
+  bottom: -25rem;
+}
+
+.hero {
+  align-self: center;
+  justify-self: center;
+  width: min(92%, 960px);
+  padding: 64px 24px 42px;
+  text-align: center;
+}
+
+.eyebrow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  margin-bottom: clamp(34px, 6vh, 58px);
+  color: var(--muted);
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+
+.eyebrow i {
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: var(--gold);
+}
+
+.brand {
+  display: grid;
+  justify-items: center;
+  margin: 0;
+  font-family: var(--font-display), Georgia, serif;
+  font-weight: 500;
+}
+
+.brandName {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 0.09em;
+  font-size: clamp(4rem, 9vw, 7rem);
+  line-height: 0.82;
+  letter-spacing: -0.055em;
+  white-space: nowrap;
+}
+
+.brandName em {
+  margin-inline: 0.02em;
+  font-size: 0.36em;
+  font-style: normal;
+  letter-spacing: -0.02em;
+}
+
+.brandCorp {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  width: min(270px, 42%);
+  margin-top: 22px;
+  color: var(--gold);
+  font-family: var(--font-sans), Arial, sans-serif;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.5em;
+  line-height: 1;
+  text-indent: 0.5em;
+  text-transform: uppercase;
+}
+
+.brandCorp i {
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--gold));
+}
+
+.brandCorp i:last-child {
+  background: linear-gradient(90deg, var(--gold), transparent);
+}
+
+.rule {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  width: min(270px, 55%);
+  margin: clamp(26px, 4vh, 38px) auto 24px;
+}
+
+.rule span {
+  width: 50%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--gold));
+}
+
+.rule span:last-child {
+  background: linear-gradient(90deg, var(--gold), transparent);
+}
+
+.rule b {
+  width: 5px;
+  height: 5px;
+  border: 1px solid var(--gold);
+  transform: rotate(45deg);
+}
+
+.tagline {
+  margin: 0;
+  font-family: var(--font-display), Georgia, serif;
+  font-size: clamp(1.35rem, 3vw, 1.8rem);
+  font-weight: 500;
+  letter-spacing: 0.015em;
+}
+
+.comingSoon {
+  margin: 13px 0 32px;
+  color: var(--muted);
+  font-size: 0.76rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.callButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 14px;
+  min-height: 62px;
+  padding: 10px 24px;
+  border: 1px solid var(--graphite);
+  background: var(--graphite);
+  color: var(--cream-light);
+  text-align: left;
+  text-decoration: none;
+  transition: background 180ms ease, color 180ms ease, transform 180ms ease;
+}
+
+.callButton svg {
+  width: 20px;
+  fill: var(--gold-light);
+}
+
+.callButton span {
+  display: grid;
+  gap: 2px;
+  font-size: 1rem;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+}
+
+.callButton small {
+  color: #c9c0b1;
+  font-size: 0.57rem;
+  font-weight: 500;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.callButton:hover {
+  background: transparent;
+  color: var(--graphite);
+  transform: translateY(-2px);
+}
+
+.callButton:hover small {
+  color: var(--muted);
+}
+
+.callButton:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 4px;
+}
+
+footer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px 32px 34px;
+  color: var(--muted);
+  font-size: 0.59rem;
+  font-weight: 500;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+@media (max-width: 560px) {
+  .home::before {
+    inset: 10px;
+  }
+
+  .hero {
+    width: 100%;
+    padding: 42px 22px 28px;
+  }
+
+  .eyebrow {
+    gap: 8px;
+    margin-bottom: clamp(30px, 6vh, 44px);
+    font-size: 0.58rem;
+    letter-spacing: 0.11em;
+  }
+
+  .brandName {
+    gap: 0.07em;
+    font-size: clamp(2.85rem, 13.2vw, 3.35rem);
+    letter-spacing: -0.05em;
+  }
+
+  .brandCorp {
+    width: min(210px, 62%);
+    margin-top: 17px;
+    font-size: 0.62rem;
+  }
+
+  .rule {
+    margin-top: clamp(24px, 4vh, 32px);
+    margin-bottom: 21px;
+  }
+
+  .tagline {
+    max-width: 340px;
+    margin-inline: auto;
+    font-size: clamp(1.22rem, 5.8vw, 1.45rem);
+    line-height: 1.25;
+    text-wrap: balance;
+  }
+
+  .comingSoon {
+    margin: 12px 0 27px;
+    font-size: 0.68rem;
+    letter-spacing: 0.12em;
+  }
+
+  .callButton {
+    justify-content: center;
+    width: min(100%, 260px);
+    min-height: 64px;
+    padding-inline: 20px;
+  }
+
+  footer {
+    padding: 14px 24px 26px;
+    font-size: 0.56rem;
+    letter-spacing: 0.16em;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
+}
