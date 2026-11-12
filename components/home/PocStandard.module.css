@@ -1,0 +1,202 @@
+.standard {
+  --rail-h: clamp(88px, 11vh, 120px);
+  position: relative;
+  background: var(--graphite);
+  color: var(--ink);
+  overflow: hidden;
+}
+
+.stage {
+  position: relative;
+  min-height: min(calc(100svh - var(--rail-h)), 920px);
+  min-height: max(min(calc(100svh - var(--rail-h)), 920px), 560px);
+}
+
+/* ---------- Photograph in its charcoal frame ---------- */
+
+.photo {
+  position: absolute;
+  inset: clamp(18px, 3vw, 44px) 0 0 30%;
+  margin: 0;
+  overflow: hidden;
+  background: #0f100f;
+  box-shadow: inset 0 0 0 1px #ffffff0d;
+}
+
+.photoInner {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+
+.photoInner img { object-position: 70% 50%; }
+
+.caption {
+  position: absolute;
+  right: 18px;
+  bottom: 14px;
+  z-index: 2;
+  color: #f4efe6cc;
+  font-size: 0.6875rem;
+  letter-spacing: 0.08em;
+}
+
+/* ---------- Ivory slab ---------- */
+
+.slab {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 56%;
+  filter: drop-shadow(18px 0 28px #00000059);
+}
+
+.slab::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(115deg, #fffaf1e6 0%, #f4ece0bf 45%, #e9dfcfcc 100%),
+    url("/brand/stone-calcite.webp") 30% 40% / cover;
+  clip-path: polygon(0 0, 74% 0, 100% 100%, 0 100%);
+}
+
+.edge {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.edge path {
+  fill: none;
+  stroke: url(#poc-gold);
+  stroke-width: 2.5px;
+}
+
+.copy {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  height: 100%;
+  max-width: 34rem;
+  padding: clamp(5rem, 9vh, 7rem) 2rem 3rem var(--gutter);
+  padding-left: max(var(--gutter), calc((100vw - var(--max)) / 2));
+  box-sizing: content-box;
+}
+
+.heading { margin-bottom: 1.5rem; }
+
+.body {
+  max-width: 34ch;
+  margin-bottom: 2rem;
+  color: var(--ink-soft);
+  font-size: var(--step-0);
+}
+
+/* ---------- Contact rail ---------- */
+
+.rail {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: clamp(1.5rem, 3vw, 3rem);
+  min-height: var(--rail-h);
+  padding: 0 var(--gutter);
+  padding-right: max(var(--gutter), calc((100vw - var(--max)) / 2));
+  background: linear-gradient(180deg, #1d1f1d, #141514);
+  border-top: 1px solid #b58a4a66;
+  color: var(--on-dark);
+}
+
+.request {
+  display: inline-flex;
+  align-items: center;
+  gap: 1rem;
+  min-height: 52px;
+  color: var(--paper);
+  font-family: var(--font-display);
+  font-size: clamp(1.5rem, 1.1rem + 1.2vw, 2.25rem);
+  text-decoration: none;
+}
+
+.request svg {
+  width: 26px;
+  height: 26px;
+  color: var(--bronze-light);
+  transition: transform var(--dur-2) var(--ease-out);
+}
+
+.request:hover svg { transform: translate(3px, -3px); }
+
+.divider {
+  width: 1px;
+  height: 48px;
+  background: var(--bronze);
+  opacity: 0.6;
+}
+
+.phone {
+  display: grid;
+  gap: 0.1rem;
+  min-height: 52px;
+  align-content: center;
+  color: var(--paper);
+  text-decoration: none;
+}
+
+.phone span {
+  color: var(--bronze-light);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.phone strong {
+  font-size: clamp(1.25rem, 1rem + 0.8vw, 1.75rem);
+  font-weight: 500;
+  letter-spacing: 0.01em;
+}
+
+/* ---------- Stacked (tablet/mobile) ---------- */
+
+@media (max-width: 860px) {
+  .stage { display: grid; min-height: 0; }
+
+  .slab {
+    position: relative;
+    width: 100%;
+    filter: drop-shadow(0 14px 22px #00000052);
+    z-index: 1;
+  }
+
+  .slab::before { clip-path: polygon(0 0, 100% 0, 100% 86%, 0 100%); }
+
+  .edge { display: none; }
+
+  .copy {
+    max-width: none;
+    padding: 4.5rem var(--gutter) 5.5rem;
+    box-sizing: border-box;
+  }
+
+  .photo {
+    position: relative;
+    inset: auto;
+    margin-top: -3rem;
+    aspect-ratio: 4 / 3.4;
+  }
+
+  .rail {
+    justify-content: space-between;
+    padding-block: 1rem;
+  }
+}
+
+@media (max-width: 520px) {
+  .rail { flex-direction: column; align-items: flex-start; gap: 0.75rem; padding-block: 1.5rem; }
+  .divider { display: none; }
+}

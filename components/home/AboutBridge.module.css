@@ -1,0 +1,23 @@
+.about { background: var(--ivory); }
+
+.layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr);
+  gap: clamp(2.5rem, 6vw, 7rem);
+  align-items: center;
+}
+
+.media {
+  position: relative;
+  aspect-ratio: 6 / 5;
+  overflow: hidden;
+  background: var(--graphite);
+}
+
+.copy { display: grid; gap: 1.75rem; justify-items: start; }
+.copy h2 { max-width: 14ch; }
+
+@media (max-width: 860px) {
+  .layout { grid-template-columns: 1fr; }
+  .media { aspect-ratio: 4 / 3; }
+}

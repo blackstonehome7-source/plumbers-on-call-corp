@@ -1,0 +1,43 @@
+.scopes,
+.projects {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: clamp(3rem, 6vw, 6rem) clamp(1.5rem, 4vw, 4rem);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.scopes > li:nth-child(even),
+.projects > li:nth-child(even) { margin-top: clamp(3rem, 10vw, 9rem); }
+
+.scope,
+.project {
+  display: grid;
+  gap: 0.85rem;
+  color: var(--ink);
+  text-decoration: none;
+}
+
+.media {
+  position: relative;
+  aspect-ratio: 4 / 3;
+  overflow: hidden;
+  background: var(--stone);
+  margin-bottom: 0.5rem;
+}
+
+.scopes > li:nth-child(3n + 1) .media { aspect-ratio: 4 / 5; }
+
+.media img { transition: transform 1.4s var(--ease-out); }
+.scope:hover .media img,
+.project:hover .media img { transform: scale(1.04); }
+
+.title { font-size: var(--step-3); }
+.detail { max-width: 46ch; color: var(--ink-soft); }
+
+@media (max-width: 760px) {
+  .scopes, .projects { grid-template-columns: 1fr; }
+  .scopes > li:nth-child(even), .projects > li:nth-child(even) { margin-top: 0; }
+  .scopes > li:nth-child(3n + 1) .media { aspect-ratio: 4 / 3; }
+}

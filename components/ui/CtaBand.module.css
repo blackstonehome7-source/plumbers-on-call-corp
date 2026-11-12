@@ -1,0 +1,57 @@
+.cta {
+  position: relative;
+  padding-block: clamp(5rem, 11vw, 10rem);
+  background:
+    linear-gradient(180deg, #171817f0, #121312fa),
+    url("/brand/stone-calcite.webp") center / cover;
+  color: var(--on-dark);
+  text-align: center;
+  overflow: hidden;
+}
+
+.cta::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: 1px;
+  height: clamp(3rem, 6vw, 5rem);
+  background: linear-gradient(var(--bronze), transparent);
+}
+
+.inner { display: grid; justify-items: center; }
+
+.cta :global(.eyebrow) { color: var(--bronze-light); }
+
+.title {
+  max-width: 14ch;
+  color: var(--paper);
+}
+
+.text {
+  max-width: 48ch;
+  margin-top: 1.5rem;
+  color: var(--on-dark-muted);
+  font-size: var(--step-1);
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.85rem;
+  margin-top: 2.5rem;
+}
+
+.small {
+  margin-top: 2rem;
+  color: var(--on-dark-muted);
+  font-size: 0.875rem;
+}
+
+.small a { color: var(--paper); overflow-wrap: anywhere; }
+
+@media (max-width: 520px) {
+  .actions { width: 100%; flex-direction: column; }
+  .actions :global(.btn) { width: 100%; }
+}
