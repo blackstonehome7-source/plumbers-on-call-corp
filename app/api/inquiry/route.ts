@@ -1,5 +1,5 @@
-import { company } from "../../../content/company";
-import { formatInquiryEmail, isLikelySpam, validateInquiry } from "../../../lib/inquiry";
+import { company } from "@/content/company";
+import { formatInquiryEmail, isLikelySpam, validateInquiry } from "@/lib/inquiry";
 
 export const runtime = "nodejs";
 
@@ -39,6 +39,14 @@ function json(status: number, body: Record<string, unknown>): Response {
   return Response.json(body, { status, headers: { "Cache-Control": "no-store" } });
 }
 
+type Outcome = "sent" | "invalid" | "error" | "unavailable" | "limited";
+
+/** No-JS form posts get a redirect back to /contact with a status, never raw JSON. */
+function redirectBack(request: Request, outcome: Outcome): Response {
+  const url = new URL(`/contact?status=${outcome}#request`, request.url);
+  return Response.redirect(url, 303);
+}
+
 /** Reads the body as text, giving up (null) once it exceeds `limit` bytes. */
 async function readCapped(request: Request, limit: number): Promise<string | null> {
   if (!request.body) return "";
@@ -65,38 +73,52 @@ async function readCapped(request: Request, limit: number): Promise<string | nul
 }
 
 export async function POST(request: Request): Promise<Response> {
+  const contentType = (request.headers.get("content-type") ?? "").trim();
+  // The form posts JSON via fetch; without JavaScript the browser posts urlencoded.
+  const isFormPost = /^application\/x-www-form-urlencoded\b/i.test(contentType);
+  const fail = (status: number, outcome: Outcome, body: Record<string, unknown>) =>
+    isFormPost ? redirectBack(request, outcome) : json(status, body);
+
   const apiKey = process.env.RESEND_API_KEY;
   const to = process.env.INQUIRY_TO_EMAIL;
-  if (!apiKey || !to) return json(503, { ok: false, error: UNAVAILABLE });
+  if (!apiKey || !to) return fail(503, "unavailable", { ok: false, error: UNAVAILABLE });
 
   if (rateLimited(clientIp(request), Date.now())) {
-    return json(429, { ok: false, error: `Too many requests. Please try again later or call ${company.phone.display}.` });
+    return fail(429, "limited", {
+      ok: false,
+      error: `Too many requests. Please try again later or call ${company.phone.display}.`,
+    });
   }
 
-  const contentType = request.headers.get("content-type") ?? "";
-  if (!/^application\/json\b/i.test(contentType.trim())) {
+  if (!isFormPost && !/^application\/json\b/i.test(contentType)) {
     return json(415, { ok: false, error: "Requests must be sent as JSON." });
   }
 
   const declaredLength = Number(request.headers.get("content-length"));
   if (Number.isFinite(declaredLength) && declaredLength > MAX_BODY_BYTES) {
-    return json(413, { ok: false, error: "Your request is too large." });
+    return fail(413, "invalid", { ok: false, error: "Your request is too large." });
   }
   const bodyText = await readCapped(request, MAX_BODY_BYTES);
-  if (bodyText === null) return json(413, { ok: false, error: "Your request is too large." });
+  if (bodyText === null) return fail(413, "invalid", { ok: false, error: "Your request is too large." });
 
   let raw: unknown;
-  try {
-    raw = JSON.parse(bodyText);
-  } catch {
-    return json(400, { ok: false, error: "We couldn't read your request." });
+  if (isFormPost) {
+    // A no-JS visitor can't report how long the form was open, so this path
+    // relies on the honeypot alone for spam filtering.
+    raw = { ...Object.fromEntries(new URLSearchParams(bodyText)), elapsedMs: 3000 };
+  } else {
+    try {
+      raw = JSON.parse(bodyText);
+    } catch {
+      return json(400, { ok: false, error: "We couldn't read your request." });
+    }
   }
 
   // Don't tip off bots: pretend success, send nothing.
-  if (isLikelySpam(raw)) return json(200, { ok: true });
+  if (isLikelySpam(raw)) return isFormPost ? redirectBack(request, "sent") : json(200, { ok: true });
 
   const result = validateInquiry(raw);
-  if (!result.ok) return json(400, { ok: false, errors: result.errors });
+  if (!result.ok) return fail(400, "invalid", { ok: false, errors: result.errors });
 
   const { subject, text } = formatInquiryEmail(result.data);
   try {
@@ -116,13 +138,13 @@ export async function POST(request: Request): Promise<Response> {
     if (!response.ok) {
       // Status only: never log the customer's details or the API key.
       console.error(`[inquiry] Resend responded with status ${response.status}`);
-      return json(502, { ok: false, error: SEND_FAILED });
+      return fail(502, "error", { ok: false, error: SEND_FAILED });
     }
   } catch (error) {
     const reason = error instanceof Error ? error.name : "UnknownError";
     console.error(`[inquiry] Resend request failed: ${reason}`);
-    return json(502, { ok: false, error: SEND_FAILED });
+    return fail(502, "error", { ok: false, error: SEND_FAILED });
   }
 
-  return json(200, { ok: true });
+  return isFormPost ? redirectBack(request, "sent") : json(200, { ok: true });
 }

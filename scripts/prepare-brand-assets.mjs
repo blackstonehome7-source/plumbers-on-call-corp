@@ -28,7 +28,7 @@ await sharp(at("hero-approved-reference-v6.png"))
 
 // POC Standard: room aperture from the supplied section reference.
 await sharp(at("poc-standard-reference.png"))
-  .extract({ left: 548, top: 42, width: 1038, height: 826 })
+  .extract({ left: 548, top: 42, width: 1038, height: 770 })
   .webp({ quality: 82 })
   .toFile(`${illus}/standard-bathroom.webp`);
 

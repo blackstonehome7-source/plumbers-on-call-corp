@@ -30,7 +30,9 @@ export function Hero() {
         <h1 id="hero-title" className={styles.title}>
           <Wordmark surface="native" priority className={styles.wordmark} />
         </h1>
-        <p className={styles.tagline}>Exceptional plumbing. Built on trust.</p>
+        <p className={styles.tagline}>
+          Exceptional plumbing. <span className={styles.taglineEnd}>Built on trust.</span>
+        </p>
         <p className={styles.serviceLine}>
           Residential, commercial &amp; emergency plumbing in {company.region}.
         </p>

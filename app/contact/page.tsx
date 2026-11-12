@@ -19,12 +19,22 @@ const NEXT_STEPS = [
   "You get a clear scope before any work begins.",
 ];
 
+const STATUS_NOTICES: Record<string, { tone: "ok" | "warn"; text: string }> = {
+  sent: { tone: "ok", text: "Request received. We’ll be in touch shortly. For anything urgent, please call." },
+  invalid: { tone: "warn", text: "Some details were missing or didn’t look right. Please check the form, or call us." },
+  error: { tone: "warn", text: "We couldn’t send your request just now. Please call us instead." },
+  unavailable: { tone: "warn", text: "Online requests aren’t available right now. Please call or email us." },
+  limited: { tone: "warn", text: "Too many requests from this connection. Please call us instead." },
+};
+
 type Props = {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 };
 
 export default async function ContactPage({ searchParams }: Props) {
-  const { service } = await searchParams;
+  const { service, status } = await searchParams;
+  // Set by /api/inquiry after a no-JavaScript form post.
+  const notice = typeof status === "string" ? STATUS_NOTICES[status] : undefined;
   const defaultService = typeof service === "string" ? getService(service)?.slug : undefined;
 
   // The form is only rendered when /api/inquiry can actually deliver it: the route
@@ -69,7 +79,13 @@ export default async function ContactPage({ searchParams }: Props) {
             </p>
           </section>
 
-          <section className={styles.formCol} aria-labelledby="contact-form-title">
+          <section id="request" className={styles.formCol} aria-labelledby="contact-form-title">
+            {notice ? (
+              <p role="status" className={notice.tone === "ok" ? styles.noticeOk : styles.noticeWarn}>
+                {notice.text}{" "}
+                <a href={company.phone.href}>{company.phone.display}</a>
+              </p>
+            ) : null}
             {canSendInquiries ? (
               <>
                 <h2 id="contact-form-title" className="display-m">

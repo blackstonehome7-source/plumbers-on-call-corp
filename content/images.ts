@@ -12,7 +12,7 @@ export const images: Record<ImageKey, SiteImage> = {
   standardBathroom: {
     src: "/images/illustrative/standard-bathroom.webp",
     width: 1038,
-    height: 826,
+    height: 770,
     alt: "Warm stone vanity with a brushed-brass faucet, large mirror and a glass-enclosed shower.",
     illustrative: true,
     credit: generated,

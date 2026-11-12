@@ -13,6 +13,14 @@
     border-top: 1px solid var(--line);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
+    transition:
+      transform var(--dur-2) var(--ease-out),
+      opacity var(--dur-2) var(--ease-out);
+  }
+
+  .bar[data-hidden] {
+    transform: translateY(110%);
+    opacity: 0;
   }
 
   :global(body) { padding-bottom: calc(72px + env(safe-area-inset-bottom)); }

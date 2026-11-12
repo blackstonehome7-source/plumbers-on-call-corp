@@ -180,7 +180,7 @@
   .hero { padding-bottom: 6rem; }
   .stoneImg { object-position: 22% 50%; }
   .wordmark { width: min(94vw, 560px); }
-  .tagline { max-width: 15ch; }
+  .taglineEnd { display: block; }
   .actions { flex-direction: column; width: 100%; max-width: 360px; }
   .primary, .secondary { width: 100%; }
   .scroll { display: none; }

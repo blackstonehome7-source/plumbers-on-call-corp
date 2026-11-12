@@ -158,3 +158,15 @@
 @media (max-width: 380px) {
   .bigPhone { font-size: var(--step-3); }
 }
+
+/* No-JS submission result banner */
+.noticeOk,
+.noticeWarn {
+  margin-bottom: 1.5rem;
+  padding: 1rem 1.25rem;
+  border-left: 2px solid var(--success);
+  background: #2f5d3a12;
+  color: var(--ink);
+}
+.noticeWarn { border-left-color: var(--danger); background: #9b2c1f10; }
+.noticeOk a, .noticeWarn a { font-weight: 600; }
