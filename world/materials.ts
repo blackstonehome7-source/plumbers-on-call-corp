@@ -3,9 +3,7 @@ import {
   MeshBasicMaterial,
   MeshStandardMaterial,
   MirroredRepeatWrapping,
-  RepeatWrapping,
   SRGBColorSpace,
-  Vector2,
   type Texture,
 } from "three";
 
@@ -14,27 +12,26 @@ import {
  * stone, polished floor, warm ivory, brushed brass, glass and one red accent.
  * Sharing them keeps the look coherent and the shader count low.
  */
-export function createMaterials(stoneTex: Texture, wallNormal: Texture, wallRough: Texture) {
-  stoneTex.colorSpace = SRGBColorSpace;
-  stoneTex.wrapS = stoneTex.wrapT = MirroredRepeatWrapping;
-  stoneTex.repeat.set(2.2, 1.6);
-  // Scanned surface relief (Poly Haven "plastered_wall_04", CC0) so raking light has something to catch.
-  for (const t of [wallNormal, wallRough]) {
-    t.wrapS = t.wrapT = RepeatWrapping;
-    t.repeat.set(9, 8);
+export function createMaterials(marbleColor: Texture, marbleOrm: Texture) {
+  // Black marble with gold veining, generated in Blender (scripts/make-marble.py).
+  // The second map carries roughness (G) and metalness (B): the veins are real metal.
+  marbleColor.colorSpace = SRGBColorSpace;
+  for (const t of [marbleColor, marbleOrm]) {
+    t.wrapS = t.wrapT = MirroredRepeatWrapping;
+    t.repeat.set(3.2, 2.8);
+    t.anisotropy = 8;
   }
 
   const mats = {
-    /** Honed charcoal stone with faint veining (walls, fins). */
+    /** Polished black marble with gold veins (walls, fins, partitions). */
     stone: new MeshStandardMaterial({
-      color: 0x5e584f,
-      map: stoneTex,
-      normalMap: wallNormal,
-      normalScale: new Vector2(0.7, 0.7),
-      roughnessMap: wallRough,
+      color: 0xffffff,
+      map: marbleColor,
+      roughnessMap: marbleOrm,
+      metalnessMap: marbleOrm,
       roughness: 1,
-      metalness: 0,
-      envMapIntensity: 0.25,
+      metalness: 1,
+      envMapIntensity: 0.55,
     }),
     /** Plain dark slab (floor plates, structure). */
     slab: new MeshStandardMaterial({ color: 0x1c1b1a, roughness: 0.78, metalness: 0, envMapIntensity: 0.3 }),

@@ -139,11 +139,7 @@ export function createWorld(
   const dataTexture = (url: string) => loader.load(url);
   const ctx: WorldCtx = {
     tier,
-    mats: createMaterials(
-      texture("/brand/stone-calcite.webp"),
-      dataTexture("/world/tex/wall-normal.webp"),
-      dataTexture("/world/tex/wall-rough.webp"),
-    ),
+    mats: createMaterials(texture("/world/tex/marble-color.webp"), dataTexture("/world/tex/marble-orm.webp")),
     texture,
   };
 

@@ -1,5 +1,9 @@
 import {
+  AdditiveBlending,
   BoxGeometry,
+  BufferAttribute,
+  BufferGeometry,
+  CanvasTexture,
   CylinderGeometry,
   Group,
   HemisphereLight,
@@ -10,10 +14,13 @@ import {
   Object3D,
   PlaneGeometry,
   PointLight,
+  Points,
+  PointsMaterial,
   SphereGeometry,
   SpotLight,
   SRGBColorSpace,
 } from "three";
+import { Reflector } from "three/addons/objects/Reflector.js";
 import { FLOOR, LINE, MONO, SIGN, VALVE, WALL } from "../layout";
 import type { FrameState, SceneModule, WorldCtx } from "../types";
 
@@ -24,6 +31,7 @@ const POINTER_INTENSITY = 3.2; // small light that follows the pointer
 const UPPER_INTENSITY = 46; // wash on the wall above (About / quiet pages)
 const FILL_INTENSITY = 0.75;
 const BEAD_SPEED = 2.4; // units per second down the line
+const STRIP_GAIN = 1.9; // how hot the light strips burn (drives the bloom)
 
 const smooth = (a: number, b: number, v: number) => {
   const t = MathUtils.clamp((v - a) / (b - a), 0, 1);
@@ -63,20 +71,103 @@ export function createName(ctx: WorldCtx): SceneModule & {
   wallPiece(slotL, slotR, FLOOR.y + VALVE.slotH, WALL.top);
   void wallH;
 
-  /* ---- Floor: dark, polished, slightly see-through so mirrored copies read as reflections ---- */
-  const floorMat = new MeshStandardMaterial({
-    color: 0x0a0a09,
-    roughness: 0.34,
-    metalness: 0,
+  /* ---- Floor: mirror-polished black stone ----
+     On capable devices the floor is a true planar mirror, tinted dark, so the
+     slab, the light strips and the brass all stand on their own reflections.
+     Elsewhere it is a plain glossy plane. */
+  const floorW = FLOOR.right - FLOOR.left;
+  const floorD = FLOOR.front - FLOOR.back;
+  if (ctx.tier === "full") {
+    const mirror = new Reflector(new PlaneGeometry(floorW, floorD), {
+      textureWidth: 1024,
+      textureHeight: 576,
+      color: 0x8a847a,
+      clipBias: 0.003,
+    });
+    mirror.rotation.x = -Math.PI / 2;
+    mirror.position.set((FLOOR.left + FLOOR.right) / 2, FLOOR.y, (FLOOR.front + FLOOR.back) / 2);
+    group.add(fixed(mirror));
+  } else {
+    const floorMat = new MeshStandardMaterial({ color: 0x0a0a09, roughness: 0.34, metalness: 0, envMapIntensity: 0.1 });
+    const floor = new Mesh(new PlaneGeometry(floorW, floorD), floorMat);
+    floor.rotation.x = -Math.PI / 2;
+    floor.position.set((FLOOR.left + FLOOR.right) / 2, FLOOR.y, (FLOOR.front + FLOOR.back) / 2);
+    group.add(fixed(floor));
+  }
+
+  /* ---- Light strips: a warm line under the slab and a cove along the wall base ---- */
+  const stripMat = new MeshBasicMaterial({ color: 0xffd9a3 });
+  stripMat.color.multiplyScalar(STRIP_GAIN);
+  // A soft fall-off painted once and reused as the wash each strip throws on the stone.
+  const gradient = document.createElement("canvas");
+  gradient.width = 128;
+  gradient.height = 128;
+  const g2d = gradient.getContext("2d");
+  if (g2d) {
+    // Falls away from the strip, and fades toward both ends so it has no hard edge.
+    const fall = g2d.createLinearGradient(0, 0, 0, 128);
+    fall.addColorStop(0, "rgba(255,255,255,1)");
+    fall.addColorStop(0.18, "rgba(255,255,255,0.38)");
+    fall.addColorStop(0.55, "rgba(255,255,255,0.08)");
+    fall.addColorStop(1, "rgba(255,255,255,0)");
+    g2d.fillStyle = fall;
+    g2d.fillRect(0, 0, 128, 128);
+    g2d.globalCompositeOperation = "destination-in";
+    const sides = g2d.createLinearGradient(0, 0, 128, 0);
+    sides.addColorStop(0, "rgba(0,0,0,0)");
+    sides.addColorStop(0.16, "rgba(0,0,0,1)");
+    sides.addColorStop(0.84, "rgba(0,0,0,1)");
+    sides.addColorStop(1, "rgba(0,0,0,0)");
+    g2d.fillStyle = sides;
+    g2d.fillRect(0, 0, 128, 128);
+  }
+  const washTex = new CanvasTexture(gradient);
+  const washMat = (opacity: number) =>
+    new MeshBasicMaterial({ map: washTex, color: 0xffb877, transparent: true, opacity, blending: AdditiveBlending, depthWrite: false });
+  const washes: { mat: MeshBasicMaterial; base: number }[] = [];
+  const addWash = (w: number, h: number, x: number, yTop: number, opacity: number, up: boolean) => {
+    const mat = washMat(opacity);
+    const m = new Mesh(new PlaneGeometry(w, h), mat);
+    m.position.set(x, up ? yTop + h / 2 : yTop - h / 2, 0.006);
+    if (up) m.rotation.z = Math.PI;
+    m.renderOrder = 1;
+    group.add(fixed(m));
+    washes.push({ mat, base: opacity });
+  };
+  const slabBottom = SIGN.y - SIGN.slabH / 2;
+  const underSlab = new Mesh(new BoxGeometry(SIGN.slabW * 0.96, 0.022, 0.05), stripMat);
+  underSlab.position.set(SIGN.x, slabBottom - 0.03, 0.03);
+  group.add(fixed(underSlab));
+  addWash(SIGN.slabW * 1.3, 2.2, SIGN.x, slabBottom - 0.02, 0.15, false);
+  const cove = new Mesh(new BoxGeometry(WALL.right - WALL.left, 0.024, 0.03), stripMat);
+  cove.position.set((WALL.left + WALL.right) / 2, FLOOR.y + 0.014, 0.02);
+  group.add(fixed(cove));
+  addWash(WALL.right - WALL.left, 1.3, (WALL.left + WALL.right) / 2, FLOOR.y + 0.02, 0.12, true);
+
+  /* ---- Dust in the light: a few hundred motes drifting in front of the wall ---- */
+  const MOTES = ctx.tier === "full" ? 340 : 120;
+  const motePos = new Float32Array(MOTES * 3);
+  const moteSeed = new Float32Array(MOTES);
+  for (let i = 0; i < MOTES; i++) {
+    motePos[i * 3] = WALL.left + Math.random() * (WALL.right - WALL.left + 8);
+    motePos[i * 3 + 1] = FLOOR.y + Math.random() * 16;
+    motePos[i * 3 + 2] = 0.4 + Math.random() * 5;
+    moteSeed[i] = Math.random() * 100;
+  }
+  const moteGeo = new BufferGeometry();
+  moteGeo.setAttribute("position", new BufferAttribute(motePos, 3));
+  const moteMat = new PointsMaterial({
+    color: 0xffdcae,
+    size: 0.028,
+    sizeAttenuation: true,
     transparent: true,
-    opacity: 0.9,
-    envMapIntensity: 0.1,
+    opacity: 0.5,
+    blending: AdditiveBlending,
+    depthWrite: false,
   });
-  const floor = new Mesh(new PlaneGeometry(FLOOR.right - FLOOR.left, FLOOR.front - FLOOR.back), floorMat);
-  floor.rotation.x = -Math.PI / 2;
-  floor.position.set((FLOOR.left + FLOOR.right) / 2, FLOOR.y, (FLOOR.front + FLOOR.back) / 2);
-  floor.renderOrder = 2;
-  group.add(fixed(floor));
+  const motes = new Points(moteGeo, moteMat);
+  motes.frustumCulled = false;
+  group.add(motes);
 
   /* ---- The slab and the logo ---- */
   const slabTex = ctx.texture("/brand/stone-calcite.webp");
@@ -86,11 +177,6 @@ export function createName(ctx: WorldCtx): SceneModule & {
   const slab = new Mesh(slabGeo, slabMat);
   slab.position.set(SIGN.x, SIGN.y, SIGN.slabD / 2);
   group.add(fixed(slab));
-
-  // A hairline of brass under the slab: the shadow gap of a mounted stone.
-  const shelf = new Mesh(new BoxGeometry(SIGN.slabW, 0.018, SIGN.slabD + 0.03), mats.brass);
-  shelf.position.set(SIGN.x, SIGN.y - SIGN.slabH / 2 - 0.009, (SIGN.slabD + 0.03) / 2);
-  group.add(fixed(shelf));
 
   const logoTex = ctx.texture("/brand/logo.webp");
   logoTex.colorSpace = SRGBColorSpace;
@@ -214,6 +300,17 @@ export function createName(ctx: WorldCtx): SceneModule & {
     if (introT === null) key.intensity = KEY_INTENSITY * presence;
     fill.intensity = FILL_INTENSITY * lightLevel;
     upper.intensity = UPPER_INTENSITY * lightLevel;
+
+    stripMat.color.setHex(0xffd9a3).multiplyScalar(STRIP_GAIN * lightLevel);
+    for (const w of washes) w.mat.opacity = w.base * lightLevel;
+    moteMat.opacity = 0.5 * lightLevel;
+    for (let i = 0; i < MOTES; i++) {
+      const k = i * 3;
+      motePos[k] += Math.sin(time * 0.21 + moteSeed[i]) * 0.012 * dt * 6;
+      motePos[k + 1] += (0.018 + (moteSeed[i] % 1) * 0.02) * dt;
+      if (motePos[k + 1] > FLOOR.y + 16) motePos[k + 1] = FLOOR.y;
+    }
+    moteGeo.attributes.position.needsUpdate = true;
 
     const top = 14;
     const span = top - (LINE.bottom + 2);
