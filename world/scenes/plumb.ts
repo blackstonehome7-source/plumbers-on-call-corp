@@ -22,7 +22,7 @@ import type { FrameState, SceneModule, WorldCtx } from "../types";
 
 // ── Lights ──────────────────────────────────────────────────────────────
 const SPOT_COLOR = 0xffd9a8;
-const SPOT_INTENSITY = 70;
+const SPOT_INTENSITY = 42;
 const SPOT_ANGLE = 0.2;
 const SPOT_PENUMBRA = 0.8;
 const SPOT_DISTANCE = 14;
@@ -32,7 +32,7 @@ const SPOT_OFFSET = { x: 1.8, y: 3.0, z: 3.4 };
 const SPOT_AIM_Y = 0.55;
 
 const RIM_COLOR = 0xffc890;
-const RIM_INTENSITY = 2;
+const RIM_INTENSITY = 0.5;
 const RIM_DISTANCE = 5;
 /** Below, slightly left, between the bob and the wall. */
 const RIM_OFFSET = { x: -0.45, y: -0.5, z: -0.65 };

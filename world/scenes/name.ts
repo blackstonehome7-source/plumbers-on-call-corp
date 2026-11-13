@@ -48,6 +48,8 @@ export function createName(ctx: WorldCtx): SceneModule & {
   setIntro(seconds: number | null): void;
   /** 0..1 global light level used by other scenes during the intro. */
   level(): number;
+  /** Swap the mirror floor for a plain glossy one (used when a device cannot keep up). */
+  setMirror(on: boolean): void;
 } {
   const { mats } = ctx;
   const group = new Group();
@@ -77,23 +79,31 @@ export function createName(ctx: WorldCtx): SceneModule & {
      Elsewhere it is a plain glossy plane. */
   const floorW = FLOOR.right - FLOOR.left;
   const floorD = FLOOR.front - FLOOR.back;
+  const plainFloor = new Mesh(
+    new PlaneGeometry(floorW, floorD),
+    new MeshStandardMaterial({ color: 0x0a0a09, roughness: 0.34, metalness: 0, envMapIntensity: 0.1 }),
+  );
+  plainFloor.rotation.x = -Math.PI / 2;
+  plainFloor.position.set((FLOOR.left + FLOOR.right) / 2, FLOOR.y, (FLOOR.front + FLOOR.back) / 2);
+  group.add(fixed(plainFloor));
+  let mirror: Reflector | null = null;
   if (ctx.tier === "full") {
-    const mirror = new Reflector(new PlaneGeometry(floorW, floorD), {
+    mirror = new Reflector(new PlaneGeometry(floorW, floorD), {
       textureWidth: 1024,
       textureHeight: 576,
       color: 0x8a847a,
       clipBias: 0.003,
     });
     mirror.rotation.x = -Math.PI / 2;
-    mirror.position.set((FLOOR.left + FLOOR.right) / 2, FLOOR.y, (FLOOR.front + FLOOR.back) / 2);
+    mirror.position.copy(plainFloor.position);
     group.add(fixed(mirror));
-  } else {
-    const floorMat = new MeshStandardMaterial({ color: 0x0a0a09, roughness: 0.34, metalness: 0, envMapIntensity: 0.1 });
-    const floor = new Mesh(new PlaneGeometry(floorW, floorD), floorMat);
-    floor.rotation.x = -Math.PI / 2;
-    floor.position.set((FLOOR.left + FLOOR.right) / 2, FLOOR.y, (FLOOR.front + FLOOR.back) / 2);
-    group.add(fixed(floor));
+    plainFloor.visible = false;
   }
+  const setMirror = (on: boolean) => {
+    if (!mirror) return;
+    mirror.visible = on;
+    plainFloor.visible = !on;
+  };
 
   /* ---- Light strips: a warm line under the slab and a cove along the wall base ---- */
   const stripMat = new MeshBasicMaterial({ color: 0xffd9a3 });
@@ -322,5 +332,5 @@ export function createName(ctx: WorldCtx): SceneModule & {
     beadMat.opacity = 0.85 * lightLevel;
   }
 
-  return { group, update, setIntro, level: () => lightLevel };
+  return { group, update, setIntro, level: () => lightLevel, setMirror };
 }

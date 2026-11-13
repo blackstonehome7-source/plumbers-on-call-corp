@@ -109,7 +109,7 @@ export function createWorld(
   renderer.toneMapping = ACESFilmicToneMapping;
   renderer.toneMappingExposure = EXPOSURE;
   renderer.outputColorSpace = SRGBColorSpace;
-  const maxDpr = tier === "full" ? 1.75 : 1.25;
+  let maxDpr = tier === "full" ? 1.6 : 1.25;
 
   const scene = new Scene();
   scene.fog = new Fog(BACKGROUND, 12, 46);
@@ -417,7 +417,8 @@ export function createWorld(
     if (w === W && h === H) return;
     W = w;
     H = h;
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, maxDpr));
+    appliedDpr = Math.min(window.devicePixelRatio || 1, maxDpr);
+    renderer.setPixelRatio(appliedDpr);
     renderer.setSize(w, h, false);
     composer?.setPixelRatio(renderer.getPixelRatio());
     composer?.setSize(w, h);
@@ -524,14 +525,43 @@ export function createWorld(
     frames++;
   }
 
+  /* Quality governor: watch real frame times and step quality down if the
+     device cannot hold about 40 frames a second. First resolution, then the
+     mirror floor and the bloom. It never steps back up within a visit. */
+  let appliedDpr = 1;
+  let slowFrames = 0;
+  let sampled = 0;
+  let effectsOn = true;
+  function govern(realDt: number) {
+    if (time < 3 || intro.playing) return; // let loading and the intro settle
+    sampled++;
+    if (realDt > 1 / 40) slowFrames++;
+    if (sampled < 90) return;
+    const struggling = slowFrames > 45;
+    sampled = 0;
+    slowFrames = 0;
+    if (!struggling) return;
+    if (appliedDpr > 1.05) {
+      maxDpr = Math.max(1, appliedDpr * 0.8);
+      W = 0; // force resize() to re-apply the pixel ratio
+    } else if (effectsOn) {
+      effectsOn = false;
+      name.setMirror(false);
+      composer = null;
+      document.documentElement.dataset.quality = "reduced";
+    }
+  }
+
   function loop(t: number) {
     raf = requestAnimationFrame(loop);
     if (document.hidden) {
       last = t;
       return;
     }
-    const dt = Math.min(0.05, Math.max(0.001, (t - last) / 1000));
+    const realDt = (t - last) / 1000;
+    const dt = Math.min(0.05, Math.max(0.001, realDt));
     last = t;
+    if (realDt < 0.25) govern(realDt); // ignore pauses such as tab switches
     step(dt);
   }
   resize();
