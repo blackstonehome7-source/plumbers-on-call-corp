@@ -10,7 +10,7 @@ export function createMaterials(stoneTex: Texture) {
   stoneTex.wrapS = stoneTex.wrapT = MirroredRepeatWrapping;
   stoneTex.repeat.set(2.2, 1.6);
 
-  return {
+  const mats = {
     /** Honed charcoal stone with faint veining (walls, fins). */
     stone: new MeshStandardMaterial({ color: 0x4f4a43, map: stoneTex, roughness: 0.86, metalness: 0, envMapIntensity: 0.25 }),
     /** Plain dark slab (floor plates, structure). */
@@ -40,6 +40,10 @@ export function createMaterials(stoneTex: Texture) {
     /** The single accent: a shut-off handle. */
     red: new MeshStandardMaterial({ color: 0xa2281c, roughness: 0.5, metalness: 0.1, envMapIntensity: 0.4 }),
   };
+  // Named materials can be matched to Blender-baked geometry (see ./baked.ts).
+  // Lamps and glass stay unnamed: they are animated or transparent and never baked.
+  for (const key of ["stone", "slab", "matte", "ivory", "brass", "brassDark", "steel", "red"] as const) mats[key].name = key;
+  return mats;
 }
 
 export type Materials = ReturnType<typeof createMaterials>;

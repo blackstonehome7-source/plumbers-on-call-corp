@@ -81,6 +81,7 @@ export function createName(ctx: WorldCtx): SceneModule & {
   /* ---- The slab and the logo ---- */
   const slabTex = ctx.texture("/brand/stone-calcite.webp");
   const slabMat = new MeshStandardMaterial({ color: 0xf3eadd, map: slabTex, roughness: 0.52, metalness: 0, envMapIntensity: 0.3 });
+  slabMat.name = "signSlab";
   const slabGeo = new BoxGeometry(SIGN.slabW, SIGN.slabH, SIGN.slabD);
   const slab = new Mesh(slabGeo, slabMat);
   slab.position.set(SIGN.x, SIGN.y, SIGN.slabD / 2);

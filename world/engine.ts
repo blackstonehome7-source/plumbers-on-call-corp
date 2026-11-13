@@ -12,6 +12,7 @@ import {
 } from "three";
 import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
 import { PLATES, PLUMB, SECTION, SECTION_ROOMS, SIGN, VALVE } from "./layout";
+import { applyBaked, exportBakeable } from "./baked";
 import { createMaterials } from "./materials";
 import { createName } from "./scenes/name";
 import { createPlates } from "./scenes/plates";
@@ -116,7 +117,15 @@ export function createWorld(
       tick: (n = 1, dt = 1 / 60) => {
         for (let i = 0; i < n; i++) step(dt);
       },
+      /** The static part of a scene as a .glb for scripts/bake-world.py. */
+      exportBakeable: () => exportBakeable(section.group),
     };
+  }
+
+  // Swap in the Blender-baked geometry where it exists (bevels, soft contact shadows).
+  if (!/[?&]baked=off(&|$)/.test(location.search)) {
+    // Only the building: large flat walls look cleaner built in code than baked.
+    void applyBaked(section.group, "/world/baked/section.glb");
   }
 
   /* ---------- Input ---------- */
@@ -210,8 +219,9 @@ export function createWorld(
           out.t.set(0.2, cy - 0.3, 0);
           out.p.set(0.9, cy + 0.3, 13.5);
         } else {
-          out.t.set(-1.4, cy, 0);
-          out.p.set(1.0, cy + 0.5, 8.4);
+          // Wide enough to keep the whole room in frame, fixtures at both ends included.
+          out.t.set(-0.5, cy, 0);
+          out.p.set(1.2, cy + 0.55, 10.6);
         }
         break;
       }
