@@ -29,7 +29,10 @@ export function Header() {
     dialogRef.current?.close();
   }, [pathname]);
 
-  const openMenu = () => dialogRef.current?.showModal();
+  const openMenu = () => {
+    dialogRef.current?.showModal();
+    setMenuOpen(true);
+  };
   const closeMenu = () => dialogRef.current?.close();
 
   const overHero = isHome && !scrolled;
@@ -95,10 +98,8 @@ export function Header() {
         ref={dialogRef}
         className={styles.sheet}
         aria-label="Site menu"
+        // Fires for Escape, the close button, backdrop clicks and route changes.
         onClose={() => setMenuOpen(false)}
-        onCancel={() => setMenuOpen(false)}
-        // showModal() is called imperatively; sync the expanded state.
-        onToggle={(e) => setMenuOpen((e.currentTarget as HTMLDialogElement).open)}
         onClick={(e) => {
           if (e.target === e.currentTarget) closeMenu();
         }}

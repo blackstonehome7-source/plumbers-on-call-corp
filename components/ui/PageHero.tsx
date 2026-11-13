@@ -47,13 +47,13 @@ export function PageHero({ eyebrow, title, lede, crumbs, image, variant = "split
         </div>
         {image && variant === "split" ? (
           <div className={styles.media}>
-            <SiteImage image={image} fill priority sizes="(max-width: 860px) 100vw, 46vw" />
+            <SiteImage image={image} fill preload sizes="(max-width: 860px) 100vw, 46vw" />
           </div>
         ) : null}
       </div>
       {image && variant === "banner" ? (
         <div className={styles.band}>
-          <SiteImage image={image} fill priority drift sizes="100vw" />
+          <SiteImage image={image} fill preload drift sizes="100vw" />
         </div>
       ) : null}
     </section>

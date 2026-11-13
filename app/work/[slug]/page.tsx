@@ -51,7 +51,7 @@ export default async function ProjectPage({ params }: { params: Promise<Params> 
 
       {cover && (
         <div className={styles.cover}>
-          <Image src={cover.src} alt={cover.alt} fill priority sizes="100vw" style={{ objectFit: "cover" }} />
+          <Image src={cover.src} alt={cover.alt} fill preload sizes="100vw" style={{ objectFit: "cover" }} />
         </div>
       )}
 

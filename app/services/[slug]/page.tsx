@@ -226,7 +226,7 @@ export default async function ServicePage({ params }: { params: Promise<Params> 
                 <li key={r.slug}>
                   <Link href={`/services/${r.slug}`} className={styles.relatedCard}>
                     <div className={styles.relatedMedia}>
-                      <SiteImage image={r.image} fill sizes="(max-width: 860px) 100vw, 33vw" />
+                      <SiteImage image={r.image} fill decorative sizes="(max-width: 860px) 100vw, 33vw" />
                     </div>
                     <h3>{r.name}</h3>
                     <p>{r.summary}</p>

@@ -46,7 +46,7 @@ export function WorkPreview() {
           : scopes.map((s, i) => (
               <li key={s.title}><Link href={`/services/${s.service}`} className={styles.card}>
                 <div className={styles.media}>
-                  <SiteImage image={s.image} fill sizes="(max-width: 860px) 82vw, 34vw" />
+                  <SiteImage image={s.image} fill decorative sizes="(max-width: 860px) 82vw, 34vw" />
                 </div>
                 <p className="caption">
                   {String(i + 1).padStart(2, "0")} · Scope of work

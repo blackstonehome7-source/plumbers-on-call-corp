@@ -89,6 +89,7 @@ console.log("og done");
   }
   await sharp(out, { raw: { width: box.width, height: box.height, channels: 4 } })
     .webp({ quality: 90, alphaQuality: 90 })
+    .resize(600)
     .toFile(`${brand}/wordmark-alpha.webp`);
   console.log("alpha wordmark done");
 }

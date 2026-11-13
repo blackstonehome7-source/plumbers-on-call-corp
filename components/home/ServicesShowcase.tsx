@@ -28,7 +28,7 @@ function Feature({
   return (
     <Link href={`/services/${service.slug}`} className={`${styles.feature} ${className}`} data-reveal>
       <div className={styles.media}>
-        <SiteImage image={service.image} fill sizes={sizes} />
+        <SiteImage image={service.image} fill decorative sizes={sizes} />
       </div>
       <div className={styles.featureText}>
         <span className={styles.index}>{index}</span>
@@ -79,7 +79,7 @@ export function ServicesShowcase() {
 
           <Link href={`/services/${bath.slug}`} className={styles.band} data-reveal="mask">
             <div className={styles.bandMedia}>
-              <SiteImage image={bath.image} fill drift sizes="100vw" />
+              <SiteImage image={bath.image} fill drift decorative sizes="100vw" />
             </div>
             <div className={styles.bandPanel}>
               <span className={styles.index}>03</span>

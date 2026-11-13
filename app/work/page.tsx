@@ -83,7 +83,7 @@ export default function WorkPage() {
                 <li key={s.title} data-reveal style={{ "--reveal-i": i % 2 } as CSSProperties}>
                   <Link href={`/services/${s.service}`} className={styles.scope}>
                     <div className={styles.media}>
-                      <SiteImage image={s.image} fill sizes="(max-width: 860px) 100vw, 50vw" />
+                      <SiteImage image={s.image} fill decorative sizes="(max-width: 860px) 100vw, 50vw" />
                     </div>
                     <p className="caption">{getService(s.service)?.name}</p>
                     <h3 className={styles.title}>{s.title}</h3>

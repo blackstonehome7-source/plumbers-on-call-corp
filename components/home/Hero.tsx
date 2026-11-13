@@ -18,9 +18,8 @@ export function Hero() {
           src="/brand/hero-stone.webp"
           alt=""
           fill
-          priority
+          preload
           sizes="100vw"
-          quality={80}
           className={styles.stoneImg}
         />
         <span className={styles.light} />

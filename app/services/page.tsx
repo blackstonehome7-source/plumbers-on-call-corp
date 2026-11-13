@@ -49,7 +49,7 @@ export default function ServicesPage() {
                     </span>
                   </div>
                   <div className={styles.media}>
-                    <SiteImage image={s.image} fill sizes="(max-width: 860px) 100vw, 34vw" />
+                    <SiteImage image={s.image} fill decorative sizes="(max-width: 860px) 100vw, 34vw" />
                   </div>
                 </Link>
               </li>
