@@ -38,6 +38,3 @@ export function RevealObserver() {
 
   return null;
 }
-
-/** Inline, render-blocking: hide-before-reveal only when JS runs, with a safety net. */
-export const revealBootScript = `(function(d){d.classList.add('js');setTimeout(function(){if(!d.dataset.revealReady){d.classList.remove('js')}},3500)})(document.documentElement)`;

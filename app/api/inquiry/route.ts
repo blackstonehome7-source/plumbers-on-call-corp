@@ -30,9 +30,12 @@ function rateLimited(ip: string, now: number): boolean {
   return recent.length > RATE_LIMIT;
 }
 
-function clientIp(request: Request): string {
+/** Null when the client address is unknown: those requests are not rate limited together. */
+function clientIp(request: Request): string | null {
+  // On Vercel, x-real-ip is set by the platform and cannot be spoofed by the client.
+  const real = request.headers.get("x-real-ip")?.trim();
   const forwarded = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim();
-  return forwarded || request.headers.get("x-real-ip")?.trim() || "unknown";
+  return real || forwarded || null;
 }
 
 function json(status: number, body: Record<string, unknown>): Response {
@@ -79,11 +82,20 @@ export async function POST(request: Request): Promise<Response> {
   const fail = (status: number, outcome: Outcome, body: Record<string, unknown>) =>
     isFormPost ? redirectBack(request, outcome) : json(status, body);
 
+  // Only this site's own pages may submit: blocks other sites from posting a form here.
+  const fetchSite = request.headers.get("sec-fetch-site");
+  const origin = request.headers.get("origin");
+  const crossSite =
+    (fetchSite !== null && fetchSite !== "same-origin" && fetchSite !== "none") ||
+    (origin !== null && origin !== new URL(request.url).origin);
+  if (crossSite) return json(403, { ok: false, error: "Requests must come from this website." });
+
   const apiKey = process.env.RESEND_API_KEY;
   const to = process.env.INQUIRY_TO_EMAIL;
   if (!apiKey || !to) return fail(503, "unavailable", { ok: false, error: UNAVAILABLE });
 
-  if (rateLimited(clientIp(request), Date.now())) {
+  const ip = clientIp(request);
+  if (ip && rateLimited(ip, Date.now())) {
     return fail(429, "limited", {
       ok: false,
       error: `Too many requests. Please try again later or call ${company.phone.display}.`,

@@ -1,7 +1,7 @@
 .cover {
   position: relative;
   height: clamp(320px, 56vw, 760px);
-  background: var(--stone);
+  background: var(--surface-2);
 }
 
 .story {
@@ -27,7 +27,7 @@
 .work li {
   padding-left: 1.5rem;
   position: relative;
-  color: var(--ink-soft);
+  color: var(--text-soft);
 }
 
 .work li::before {
@@ -37,10 +37,10 @@
   top: 0.75em;
   width: 10px;
   height: 1px;
-  background: var(--bronze);
+  background: var(--gold);
 }
 
-.related { margin-top: 2.5rem; color: var(--muted); }
+.related { margin-top: 2.5rem; color: var(--text-muted); }
 
 .gallery {
   display: grid;

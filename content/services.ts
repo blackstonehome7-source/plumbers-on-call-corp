@@ -176,7 +176,7 @@ export const services: Service[] = [
       },
       {
         q: "Does replacing a water heater need a permit?",
-        a: "In Massachusetts, water heater replacement generally requires a permit, and gas connections must be made by a licensed professional. We'll explain what applies to your installation.",
+        a: "In Massachusetts, water heater replacement generally requires a permit, and gas work is permitted and inspected. We'll explain what applies to your installation.",
       },
     ],
     related: ["boilers-heating", "residential-plumbing", "emergency-plumbing"],
@@ -383,7 +383,7 @@ export const services: Service[] = [
     intro: [
       "In a commercial building, the plumbing is only part of the job. The rest is access, timing, tenant notice, and making sure the people responsible for the property know what was done and why.",
       "We work with property managers, building owners, restaurant and retail operators and office tenants on installations, replacements and service. Where water has to be shut off or a space closed, we plan the work for the hours that disrupt the fewest people, including outside business hours when the building needs it.",
-      "Each job is documented in plain terms: what we found, what we did, and what we recommend next. That record serves the manager, the owner and whoever works on the system after us.",
+      "We aim to leave a plain record of each job: what we found, what we did, and what we recommend next. That record serves the manager, the owner and whoever works on the system after us.",
     ],
     image: "commercial",
     projectTypes: [
@@ -429,11 +429,11 @@ export const services: Service[] = [
       },
       {
         title: "Records for the building",
-        body: "A written scope before work and a clear summary afterward help with budgeting, inspections and future work on the system. We provide both.",
+        body: "A written scope before work and a clear summary afterward help with budgeting, inspections and future work on the system. Ask us for both.",
       },
       {
         title: "Permits and building requirements",
-        body: "Commercial plumbing and gas work generally requires permits, and many buildings have their own rules for access, insurance documentation and working hours. We'll sort out what applies before scheduling.",
+        body: "Commercial plumbing and gas work generally requires permits, and many buildings have their own rules for access, paperwork and working hours. We'll sort out what applies before scheduling.",
       },
     ],
     faqs: [

@@ -1,0 +1,70 @@
+/* Static backdrop: what you see before the world loads, or when it never does. */
+.backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: -3;
+  background:
+    radial-gradient(90% 70% at 28% 22%, #1f1c18 0%, #0c0b0a 52%, #050505 100%);
+}
+
+/* The brass line, drawn flat for the static tier. */
+.backdrop::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 78%;
+  width: 2px;
+  background: linear-gradient(90deg, #6f5a36, #e2c48e 45%, #8c6c38);
+  opacity: 0.75;
+}
+
+.canvas {
+  position: fixed;
+  inset: 0;
+  z-index: -2;
+  display: block;
+  width: 100%;
+  height: 100vh;
+  height: 100lvh;
+  opacity: 0;
+  transition: opacity 1.4s cubic-bezier(0.22, 1, 0.36, 1);
+  pointer-events: none;
+}
+
+:global(html[data-world="on"]) .canvas { opacity: 1; }
+:global(html[data-world="on"]) .backdrop::after { display: none; }
+:global(html[data-intro="playing"]) .canvas { transition-duration: 0.3s; }
+
+.vignette {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background:
+    radial-gradient(120% 90% at 50% 45%, transparent 55%, rgb(0 0 0 / 0.5) 100%),
+    linear-gradient(180deg, rgb(0 0 0 / 0.35) 0, transparent 16%);
+  pointer-events: none;
+}
+
+.skip {
+  position: fixed;
+  right: var(--gutter);
+  bottom: calc(1.5rem + env(safe-area-inset-bottom));
+  z-index: 90;
+  display: none;
+  min-height: 44px;
+  padding: 0.6rem 1.1rem;
+  background: transparent;
+  border: 1px solid var(--rule-strong);
+  border-radius: var(--radius);
+  color: var(--text-soft);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.skip:hover { color: var(--text); border-color: var(--text-soft); }
+
+:global(html[data-intro="playing"]) .skip { display: inline-flex; align-items: center; }

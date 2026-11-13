@@ -16,7 +16,7 @@ const wrap: CSSProperties = {
   justifyItems: "center",
   paddingTop: "calc(var(--header-h) + clamp(3rem, 8vw, 7rem))",
   paddingBottom: "var(--section)",
-  background: "var(--ivory)",
+  background: "var(--bg)",
   textAlign: "center",
 };
 const links: CSSProperties = {
@@ -49,7 +49,7 @@ export default function NotFound() {
             Contact
           </Link>
         </nav>
-        <p style={{ marginTop: "2rem", color: "var(--muted)" }}>
+        <p style={{ marginTop: "2rem", color: "var(--text-muted)" }}>
           Need a plumber now?{" "}
           <TrackedLink
             href={company.phone.href}
@@ -60,7 +60,7 @@ export default function NotFound() {
               alignItems: "center",
               gap: "0.5rem",
               minHeight: "44px",
-              color: "var(--ink)",
+              color: "var(--text)",
               fontWeight: 600,
             }}
           >

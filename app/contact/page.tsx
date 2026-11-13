@@ -1,10 +1,9 @@
 import { company } from "@/content/company";
 import { getService } from "@/content/services";
+import { ContactActions } from "@/components/contact/ContactActions";
 import { InquiryForm } from "@/components/forms/InquiryForm";
-import { ClockIcon, MailIcon, PhoneIcon } from "@/components/ui/Icon";
-import { PageHero } from "@/components/ui/PageHero";
-import { TrackedLink } from "@/components/ui/TrackedLink";
-import { pageMetadata } from "@/lib/seo";
+import { JsonLd } from "@/components/ui/JsonLd";
+import { breadcrumbJsonLd, pageMetadata } from "@/lib/seo";
 import styles from "./page.module.css";
 
 export const metadata = pageMetadata({
@@ -20,7 +19,7 @@ const NEXT_STEPS = [
 ];
 
 const STATUS_NOTICES: Record<string, { tone: "ok" | "warn"; text: string }> = {
-  sent: { tone: "ok", text: "Request received. We’ll be in touch shortly. For anything urgent, please call." },
+  sent: { tone: "ok", text: "Request received. We’ll be in touch. For anything urgent, please call." },
   invalid: { tone: "warn", text: "Some details were missing or didn’t look right. Please check the form, or call us." },
   error: { tone: "warn", text: "We couldn’t send your request just now. Please call us instead." },
   unavailable: { tone: "warn", text: "Online requests aren’t available right now. Please call or email us." },
@@ -33,134 +32,85 @@ type Props = {
 
 export default async function ContactPage({ searchParams }: Props) {
   const { service, status } = await searchParams;
+  const defaultService = typeof service === "string" ? getService(service)?.slug : undefined;
   // Set by /api/inquiry after a no-JavaScript form post.
   const notice = typeof status === "string" ? STATUS_NOTICES[status] : undefined;
-  const defaultService = typeof service === "string" ? getService(service)?.slug : undefined;
 
   // The form is only rendered when /api/inquiry can actually deliver it: the route
   // returns 503 unless both RESEND_API_KEY and INQUIRY_TO_EMAIL are set. Without them
-  // visitors get phone + email instead of a form that cannot send. Read per request
-  // (this page is dynamic because of searchParams), so setting the variables in the
-  // host's environment turns the form on without a code change.
+  // visitors get phone, text and email instead of a form that cannot send. Read per
+  // request (this page is dynamic because of searchParams), so setting the variables in
+  // the host's environment turns the form on without a code change.
   const canSendInquiries = Boolean(process.env.RESEND_API_KEY && process.env.INQUIRY_TO_EMAIL);
 
   return (
     <>
-      <PageHero
-        variant="plain"
-        eyebrow="Contact"
-        title="Tell us what you need."
-        lede={
-          <p>
-            For an urgent problem, call &mdash; we&rsquo;re available {company.availability}. For planned work, a few
-            details about the job help us give you a clear next step.
-          </p>
-        }
-        crumbs={[{ name: "Contact", path: "/contact" }]}
+      <JsonLd
+        data={breadcrumbJsonLd([
+          { name: "Home", path: "/" },
+          { name: "Contact", path: "/contact" },
+        ])}
       />
 
-      <section className={`section section--paper ${styles.section}`}>
-        <div className={`container ${styles.layout}`}>
-          <section className={styles.urgent} aria-labelledby="contact-urgent">
-            <h2 id="contact-urgent" className="display-s">
-              Urgent? Call now.
-            </h2>
-            <TrackedLink
-              href={company.phone.href}
-              event="phone_click"
-              placement="contact-page"
-              className={styles.bigPhone}
-            >
-              <PhoneIcon className={styles.bigPhoneIcon} />
-              {company.phone.display}
-            </TrackedLink>
-            <p className={styles.meta}>
-              <ClockIcon className={styles.metaIcon} /> Available {company.availability}
-            </p>
-          </section>
+      {/* The Valve: the slot of light stands to the right; the four ways in are on the left. */}
+      <section className={styles.hero} aria-labelledby="contact-title">
+        <div className={`container ${styles.heroInner}`}>
+          <p className="eyebrow">Contact</p>
+          <h1 id="contact-title" className={styles.title}>
+            Open <em>the line.</em>
+          </h1>
+          <p className={styles.lede}>
+            For anything urgent, call: we are available {company.availability}. For planned work, a few details
+            about the job help us give you a clear next step.
+          </p>
+          <ContactActions formAvailable={canSendInquiries} />
+        </div>
+      </section>
 
-          <section id="request" className={styles.formCol} aria-labelledby="contact-form-title">
+      <section id="request" className={`section ${styles.request}`} aria-labelledby="request-title">
+        <div className={`container ${styles.requestGrid}`}>
+          <div className={styles.aside}>
+            <p className="eyebrow">Request service</p>
+            <h2 id="request-title" className="display-m">
+              {canSendInquiries ? "Tell us about the job." : "Online requests are coming soon."}
+            </h2>
+            <h3 className={styles.nextTitle}>What happens next</h3>
+            <ol className={styles.next}>
+              {NEXT_STEPS.map((step) => (
+                <li key={step}>{step}</li>
+              ))}
+            </ol>
+          </div>
+
+          <div className={styles.formCol}>
             {notice ? (
               <p role="status" className={notice.tone === "ok" ? styles.noticeOk : styles.noticeWarn}>
-                {notice.text}{" "}
-                <a href={company.phone.href}>{company.phone.display}</a>
+                {notice.text} <a href={company.phone.href}>{company.phone.display}</a>
               </p>
             ) : null}
             {canSendInquiries ? (
               <>
-                <h2 id="contact-form-title" className="display-m">
-                  Request service
-                </h2>
                 <p className={styles.formIntro}>
-                  A few details about the job help us prepare. Email is optional unless you&rsquo;d like us to
-                  reply by email.
+                  Email is optional unless you&rsquo;d like us to reply by email.
                 </p>
                 <InquiryForm defaultService={defaultService} />
               </>
             ) : (
-              <div className={styles.unavailable}>
-                <h2 id="contact-form-title" className="display-m">
-                  Online requests are coming soon
-                </h2>
-                <p className={styles.formIntro}>
-                  In the meantime, call or email and we&rsquo;ll take it from there.
+              <div className={styles.soon}>
+                <p>
+                  The request form is being connected. In the meantime, call{company.sms ? ", text" : ""} or email
+                  and we&rsquo;ll take it from there.
                 </p>
-                <div className={styles.actions}>
-                  <TrackedLink
-                    href={company.phone.href}
-                    event="phone_click"
-                    placement="contact-page-panel"
-                    className="btn btn--dark"
-                  >
-                    <PhoneIcon /> Call {company.phone.display}
-                  </TrackedLink>
+                <div className={styles.soonActions}>
+                  <a href={company.phone.href} className="btn btn--gold">
+                    Call {company.phone.display}
+                  </a>
                   <a href={`mailto:${company.email}`} className="btn">
-                    <MailIcon /> Email us
+                    Email us
                   </a>
                 </div>
               </div>
             )}
-          </section>
-
-          <div className={styles.details}>
-            <section aria-labelledby="contact-email">
-              <h2 id="contact-email" className={styles.smallHeading}>
-                Email
-              </h2>
-              <a href={`mailto:${company.email}`} className={styles.email}>
-                {company.email}
-              </a>
-            </section>
-
-            {company.bookingUrl ? (
-              <section aria-labelledby="contact-booking">
-                <h2 id="contact-booking" className={styles.smallHeading}>
-                  Online booking
-                </h2>
-                <TrackedLink
-                  href={company.bookingUrl}
-                  event="booking_click"
-                  placement="contact-page"
-                  className="text-link"
-                  target="_blank"
-                  rel="noopener"
-                >
-                  Book a visit online <span className="text-link__rule" aria-hidden="true" />
-                  <span className="sr-only">(opens in a new tab)</span>
-                </TrackedLink>
-              </section>
-            ) : null}
-
-            <section aria-labelledby="contact-next">
-              <h2 id="contact-next" className={styles.smallHeading}>
-                What happens next
-              </h2>
-              <ol className={styles.steps}>
-                {NEXT_STEPS.map((step) => (
-                  <li key={step}>{step}</li>
-                ))}
-              </ol>
-            </section>
           </div>
         </div>
       </section>

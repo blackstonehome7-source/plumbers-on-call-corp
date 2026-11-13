@@ -1,6 +1,6 @@
 .hero {
+  position: relative;
   padding-top: calc(var(--header-h) + clamp(2.5rem, 6vw, 5.5rem));
-  background: var(--ivory);
 }
 
 .layout {
@@ -34,17 +34,17 @@
   padding: 0;
   list-style: none;
   font-size: 0.8125rem;
-  color: var(--muted);
+  color: var(--text-muted);
 }
 
 .crumbs li + li::before {
   content: "/";
   margin-right: 0.5rem;
-  color: var(--stone-deep);
+  color: var(--rule-strong);
 }
 
-.crumbs a { color: var(--muted); text-decoration: none; }
-.crumbs a:hover { color: var(--ink); text-decoration: underline; }
+.crumbs a { color: var(--text-muted); text-decoration: none; }
+.crumbs a:hover { color: var(--text); text-decoration: underline; }
 
 .title { max-width: 18ch; }
 .banner .title, .plain .title { max-width: 20ch; }
@@ -64,7 +64,7 @@
   align-self: stretch;
   min-height: clamp(360px, 46vw, 640px);
   overflow: hidden;
-  background: var(--stone);
+  background: var(--surface-2);
   animation: hero-reveal 1.3s var(--ease-out) both;
 }
 
@@ -78,7 +78,7 @@
   height: clamp(320px, 42vw, 620px);
   margin-top: clamp(3rem, 6vw, 5rem);
   overflow: hidden;
-  background: var(--stone);
+  background: var(--surface-2);
 }
 
 @media (max-width: 860px) {
@@ -88,3 +88,8 @@
   .actions { width: 100%; }
   .actions :global(.btn) { flex: 1 1 240px; }
 }
+
+/* The 3D world carries the picture: keep the image only as a fallback. */
+:global(html[data-world="on"]) .worldBacked .media { visibility: hidden; }
+.worldBacked { background: linear-gradient(90deg, rgb(5 5 5 / 0.84) 0%, rgb(5 5 5 / 0.5) 42%, transparent 68%); }
+.worldBacked .copy { padding-bottom: clamp(3rem, 7vw, 6rem); }

@@ -39,8 +39,7 @@ export function businessJsonLd() {
     telephone: company.phone.e164,
     email: company.email,
     image: `${company.url}/og.jpg`,
-    logo: `${company.url}/brand/wordmark.webp`,
-    founder: { "@type": "Person", name: company.owner.name, jobTitle: company.owner.title },
+    logo: `${company.url}/brand/logo.webp`,
     areaServed: [
       { "@type": "AdministrativeArea", name: "Greater Boston, Massachusetts" },
       { "@type": "State", name: company.state },

@@ -1,0 +1,133 @@
+.hero {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-height: max(100svh, 660px);
+  padding: calc(var(--header-h) + clamp(5.5rem, 13svh, 9.5rem)) var(--gutter) 6.5rem;
+  text-align: center;
+}
+
+.title { margin: 0; line-height: 0; }
+
+/* The logo's footprint. Width also respects short screens so the slab never crowds the copy. */
+.anchor {
+  position: relative;
+  display: block;
+  width: min(60vw, 860px, 86svh);
+  aspect-ratio: 1210 / 275;
+}
+
+/* Flat stand-in for the 3D slab: same proportions as the stone in the world (8.1 × 2.9 around a 6.2-wide logo). */
+.anchor .plate {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 130.6%;
+  height: 205.8%;
+  padding: 0;
+  display: grid;
+  place-items: center;
+  transform: translate(-50%, -50%);
+  transition: opacity 1.2s var(--ease-out);
+}
+
+.anchor .plate img { width: 76.55%; }
+
+:global(html[data-world="on"]) .anchor .plate { opacity: 0; }
+
+.copy {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: clamp(5.5rem, 15svh, 10rem);
+}
+
+.tagline {
+  font-family: var(--font-display);
+  font-size: clamp(2rem, 1.2rem + 2.6vw, 3.5rem);
+  font-weight: 500;
+  line-height: 1.05;
+  letter-spacing: -0.012em;
+  color: var(--text);
+}
+
+.tagline em { font-style: italic; color: var(--gold-light); }
+
+.line {
+  margin-top: 1rem;
+  color: var(--text-soft);
+  font-size: clamp(0.9375rem, 0.85rem + 0.35vw, 1.125rem);
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.85rem;
+  margin-top: clamp(1.5rem, 3.4svh, 2.5rem);
+}
+
+.actions :global(.btn) { min-width: 220px; min-height: 56px; }
+
+.availability {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-top: 1.4rem;
+  color: var(--text-muted);
+  font-size: 0.8125rem;
+  letter-spacing: 0.04em;
+}
+
+.availability a { color: var(--text-soft); text-decoration-color: var(--gold); }
+.availability a:hover { color: var(--gold-light); }
+
+.dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #6fb07d;
+  box-shadow: 0 0 0 4px rgb(111 176 125 / 0.18);
+}
+
+.scroll {
+  position: absolute;
+  left: var(--gutter);
+  bottom: clamp(1.25rem, 3svh, 2.25rem);
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  min-height: 44px;
+  color: var(--text-muted);
+  text-decoration: none;
+}
+
+.scroll span {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.26em;
+  text-transform: uppercase;
+}
+
+.scroll svg {
+  width: 14px;
+  height: 26px;
+  color: var(--gold);
+  animation: nudge 2.4s var(--ease-in-out) infinite;
+}
+
+.scroll:hover { color: var(--text); }
+
+@keyframes nudge {
+  50% { transform: translateY(5px); }
+}
+
+@media (max-width: 860px) {
+  .hero { padding-top: calc(var(--header-h) + clamp(4rem, 11svh, 7rem)); padding-bottom: 5rem; }
+  .anchor { width: min(76vw, 64svh); }
+  .copy { margin-top: clamp(4.5rem, 12svh, 7rem); }
+  .actions { flex-direction: column; width: 100%; max-width: 360px; }
+  .actions :global(.btn) { width: 100%; }
+  .scroll { display: none; }
+}

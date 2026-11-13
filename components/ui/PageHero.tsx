@@ -18,12 +18,17 @@ type Props = {
   /** "split": text beside a tall image. "banner": text over a wide image band below. */
   variant?: "split" | "banner" | "plain";
   actions?: ReactNode;
+  /**
+   * The 3D world shows this page's subject behind the hero, so the hero image
+   * is only a fallback for when the world is unavailable.
+   */
+  worldBacked?: boolean;
 };
 
-export function PageHero({ eyebrow, title, lede, crumbs, image, variant = "split", actions }: Props) {
+export function PageHero({ eyebrow, title, lede, crumbs, image, variant = "split", actions, worldBacked }: Props) {
   const trail = [{ name: "Home", path: "/" }, ...crumbs];
   return (
-    <section className={`${styles.hero} ${styles[variant]}`}>
+    <section className={`${styles.hero} ${styles[variant]} ${worldBacked ? styles.worldBacked : ""}`}>
       <JsonLd data={breadcrumbJsonLd(trail)} />
       <div className={`container ${styles.layout}`}>
         <div className={styles.copy}>

@@ -1,28 +1,36 @@
-/* Plumbers on Call CORP — design tokens and base layer.
+/* Plumbers on Call CORP — design tokens and base layer ("True to the line").
+   A dark world: deep black, charcoal, warm ivory, champagne gold.
    Component styles live next to components as CSS Modules. */
 
 :root {
-  /* Palette: architectural ivory, graphite, brushed bronze, warm stone */
-  --ivory: #f6f2ea;
-  --ivory-deep: #efe8dc;
-  --paper: #fffdf9;
-  --stone: #ddd5c8;
-  --stone-deep: #c9bead;
-  --taupe: #8c806f;
-  --line: #e2d9cb;
-  --line-strong: #cbbfae;
-  --graphite: #171817;
-  --graphite-soft: #232523;
-  --ink: #121312;
-  --ink-soft: #3b3a36;
-  --muted: #5e5a52;
-  --bronze: #b58a4a;
-  --bronze-light: #d6b479;
-  --bronze-text: #82602c; /* AA on ivory and paper */
-  --on-dark: #f4efe6;
-  --on-dark-muted: #b9b1a3;
-  --danger: #9b2c1f;
-  --success: #2f5d3a;
+  /* Surfaces */
+  --bg: #050505;
+  --bg-2: #0c0c0b;
+  --surface: #121211;
+  --surface-2: #1a1918;
+  --veil: rgb(5 5 5 / 0.86); /* text sections laid over the 3D world */
+  --veil-soft: rgb(5 5 5 / 0.62);
+
+  /* Text */
+  --text: #f2ebdf;
+  --text-soft: #cdc5b7;
+  --text-muted: #a19a8d; /* AA on --bg and --surface */
+
+  /* Lines */
+  --rule: rgb(255 255 255 / 0.12);
+  --rule-strong: rgb(255 255 255 / 0.22);
+
+  /* Brass / champagne gold */
+  --gold: #c9a465;
+  --gold-light: #e2c48e;
+  --gold-text: #dcbc7e; /* AA on dark surfaces */
+
+  /* Ivory stone: the logo's own material. Only for plates and solid buttons. */
+  --ivory: #ede3da;
+  --ivory-ink: #151514;
+
+  --danger: #f08f80;
+  --success: #8fc79c;
 
   /* Type */
   --font-display: var(--font-cormorant), "Cormorant Garamond", Georgia, serif;
@@ -33,13 +41,14 @@
   --step-2: clamp(1.375rem, 1.25rem + 0.6vw, 1.75rem);
   --step-3: clamp(1.75rem, 1.5rem + 1.2vw, 2.625rem);
   --step-4: clamp(2.25rem, 1.8rem + 2.2vw, 3.75rem);
-  --step-5: clamp(2.75rem, 2rem + 3.6vw, 5.25rem);
+  --step-5: clamp(2.75rem, 2rem + 3.6vw, 5.5rem);
+  --step-6: clamp(3.25rem, 2rem + 6vw, 8rem);
 
   /* Space & layout */
   --gutter: clamp(1.25rem, 0.6rem + 3vw, 4rem);
   --section: clamp(4.5rem, 3rem + 7vw, 10rem);
   --max: 1360px;
-  --measure: 62ch;
+  --measure: 60ch;
   --radius: 2px;
   --header-h: 76px;
 
@@ -49,6 +58,8 @@
   --dur-1: 180ms;
   --dur-2: 420ms;
   --dur-3: 900ms;
+
+  color-scheme: dark;
 }
 
 @media (max-width: 860px) {
@@ -60,23 +71,18 @@
 *::after { box-sizing: border-box; }
 
 html {
+  background: var(--bg);
   -webkit-text-size-adjust: 100%;
   text-size-adjust: 100%;
   scroll-padding-top: calc(var(--header-h) + 16px);
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  html { scroll-behavior: smooth; }
-}
-
 body {
   margin: 0;
-  background: var(--ivory);
-  color: var(--ink);
+  color: var(--text);
   font-family: var(--font-sans);
   font-size: var(--step-0);
   line-height: 1.65;
-  font-feature-settings: "ss01", "cv11";
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
   overflow-x: clip;
@@ -91,7 +97,7 @@ h1, h2, h3, h4 {
   font-weight: 500;
   line-height: 1.04;
   letter-spacing: -0.012em;
-  color: var(--ink);
+  color: var(--text);
   text-wrap: balance;
 }
 
@@ -101,13 +107,16 @@ a { color: inherit; text-decoration-thickness: 1px; text-underline-offset: 0.2em
 
 button, input, select, textarea { font: inherit; color: inherit; }
 
-::selection { background: #e7d3ad; color: var(--ink); }
+::selection { background: var(--gold); color: var(--ivory-ink); }
 
 :focus-visible {
-  outline: 2px solid var(--bronze);
+  outline: 2px solid var(--gold-light);
   outline-offset: 3px;
   border-radius: 1px;
 }
+
+main { position: relative; display: block; }
+main:focus { outline: none; }
 
 .sr-only {
   position: absolute !important;
@@ -120,7 +129,7 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .skip-link {
   position: fixed; z-index: 100; top: 12px; left: 12px;
   padding: 10px 16px;
-  background: var(--graphite); color: var(--on-dark);
+  background: var(--ivory); color: var(--ivory-ink);
   text-decoration: none;
   transform: translateY(-160%);
   transition: transform var(--dur-1) var(--ease-out);
@@ -136,11 +145,13 @@ button, input, select, textarea { font: inherit; color: inherit; }
   padding-inline: var(--gutter);
 }
 
-.section { padding-block: var(--section); }
+/* Sections are veils over the world: you read on darkness and still sense the space behind. */
+.section { position: relative; padding-block: var(--section); background: var(--veil); }
 .section--tight { padding-block: calc(var(--section) * 0.6); }
-.section--paper { background: var(--paper); }
-.section--dark { background: var(--graphite); color: var(--on-dark); }
-.section--dark :is(h1, h2, h3, h4) { color: var(--paper); }
+.section--paper { background: rgb(12 12 11 / 0.9); }
+.section--dark { background: rgb(3 3 3 / 0.93); }
+.section--clear { background: transparent; }
+.section + .section { border-top: 1px solid var(--rule); }
 
 /* ---------- Typography primitives ---------- */
 
@@ -149,11 +160,11 @@ button, input, select, textarea { font: inherit; color: inherit; }
   align-items: center;
   gap: 0.9em;
   margin: 0 0 1.4rem;
-  color: var(--bronze-text);
+  color: var(--gold-text);
   font-family: var(--font-sans);
   font-size: 0.75rem;
   font-weight: 600;
-  letter-spacing: 0.22em;
+  letter-spacing: 0.24em;
   line-height: 1.3;
   text-transform: uppercase;
 }
@@ -161,9 +172,8 @@ button, input, select, textarea { font: inherit; color: inherit; }
   content: "";
   width: 28px; height: 1px;
   background: currentColor;
-  opacity: 0.7;
+  opacity: 0.8;
 }
-.section--dark .eyebrow { color: var(--bronze-light); }
 
 .display-xl { font-size: var(--step-5); line-height: 0.98; letter-spacing: -0.02em; }
 .display-l { font-size: var(--step-4); line-height: 1.02; letter-spacing: -0.016em; }
@@ -172,20 +182,19 @@ button, input, select, textarea { font: inherit; color: inherit; }
 
 .lede {
   max-width: var(--measure);
-  color: var(--ink-soft);
+  color: var(--text-soft);
   font-size: var(--step-1);
   line-height: 1.6;
 }
-.section--dark .lede { color: var(--on-dark-muted); }
 
-.prose { max-width: var(--measure); color: var(--ink-soft); }
+.prose { max-width: var(--measure); color: var(--text-soft); }
 .prose > * + * { margin-top: 1.1em; }
 
 .caption {
-  color: var(--taupe);
+  color: var(--text-muted);
   font-size: 0.6875rem;
-  font-weight: 500;
-  letter-spacing: 0.12em;
+  font-weight: 600;
+  letter-spacing: 0.16em;
   text-transform: uppercase;
 }
 
@@ -193,8 +202,10 @@ button, input, select, textarea { font: inherit; color: inherit; }
 
 .btn {
   --btn-bg: transparent;
-  --btn-fg: var(--ink);
-  --btn-border: var(--ink);
+  --btn-fg: var(--text);
+  --btn-border: rgb(242 235 223 / 0.5);
+  --btn-fill: var(--ivory);
+  --btn-fill-fg: var(--ivory-ink);
   position: relative;
   display: inline-flex;
   align-items: center;
@@ -218,38 +229,43 @@ button, input, select, textarea { font: inherit; color: inherit; }
   overflow: hidden;
   transition:
     color var(--dur-2) var(--ease-out),
-    border-color var(--dur-2) var(--ease-out),
-    background-color var(--dur-2) var(--ease-out);
+    border-color var(--dur-2) var(--ease-out);
 }
 .btn::before {
   content: "";
   position: absolute; inset: 0; z-index: -1;
-  background: var(--btn-fill, var(--ink));
+  background: var(--btn-fill);
   transform: scaleX(0);
   transform-origin: right;
   transition: transform var(--dur-2) var(--ease-out);
 }
 .btn:hover::before { transform: scaleX(1); transform-origin: left; }
-.btn:hover { --btn-fg: var(--paper); }
+.btn:hover { --btn-fg: var(--btn-fill-fg); border-color: var(--btn-fill); }
 .btn svg { width: 18px; height: 18px; flex: none; transition: transform var(--dur-2) var(--ease-out); }
 .btn:hover svg { transform: translate(2px, -2px); }
 
+/* Primary: brushed gold. */
 .btn--gold {
-  --btn-bg: linear-gradient(118deg, #f2d496 0%, #e6c283 50%, #d8ae6b 100%);
+  --btn-fg: var(--ivory-ink);
   --btn-border: #d9b273;
-  --btn-fill: var(--graphite);
-  background: linear-gradient(118deg, #f2d496 0%, #e6c283 50%, #d8ae6b 100%);
-  box-shadow: inset 0 1px 0 #fff6dc99, 0 10px 24px -14px #6d4f2380;
+  --btn-fill: var(--ivory);
+  background: linear-gradient(118deg, #edcf93 0%, #dcb878 50%, #c79f5d 100%);
+  box-shadow: inset 0 1px 0 #fff6dc80, 0 14px 30px -18px #c9a46599;
 }
-.btn--dark { --btn-bg: var(--graphite); --btn-fg: var(--paper); --btn-border: var(--graphite); --btn-fill: var(--bronze); background: var(--graphite); }
-.btn--dark:hover { --btn-fg: var(--ink); }
-.btn--light { --btn-fg: var(--paper); --btn-border: #f4efe680; --btn-fill: var(--paper); }
-.btn--light:hover { --btn-fg: var(--ink); }
+/* Solid ivory: the logo's stone as a button. */
+.btn--dark {
+  --btn-fg: var(--ivory-ink);
+  --btn-border: var(--ivory);
+  --btn-fill: var(--gold);
+  background: var(--ivory);
+}
+.btn--light { --btn-border: rgb(242 235 223 / 0.5); }
 
 .text-link {
   display: inline-flex;
   align-items: center;
   gap: 0.9rem;
+  min-height: 44px;
   color: inherit;
   font-weight: 600;
   font-size: 0.9375rem;
@@ -259,37 +275,35 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .text-link__rule {
   position: relative;
   width: 64px; height: 1px;
-  background: currentColor;
+  background: var(--gold);
   transition: width var(--dur-2) var(--ease-out);
 }
 .text-link__rule::after {
   content: "";
   position: absolute; right: 0; top: -4px;
   width: 9px; height: 9px;
-  border-top: 1px solid currentColor;
-  border-right: 1px solid currentColor;
+  border-top: 1px solid var(--gold);
+  border-right: 1px solid var(--gold);
   transform: rotate(45deg);
 }
 .text-link:hover .text-link__rule { width: 92px; }
 
-/* Stock photography is toned toward the warm, restrained palette so images
-   from different photographers read as one series. */
-img[data-tone="stock"] { filter: saturate(0.78) sepia(0.08) contrast(1.02); }
+/* ---------- Imagery ---------- */
 
-/* ---------- Illustrative label ---------- */
+/* Stock photography is toned toward the palette so different photographers read as one series. */
+img[data-tone="stock"] { filter: saturate(0.7) sepia(0.1) contrast(1.04) brightness(0.92); }
 
 .illustrative-tag {
   position: absolute;
   right: 12px; bottom: 12px;
   z-index: 2;
-  padding: 5px 9px;
-  background: #121312b3;
-  color: #f4efe6;
-  font-size: 0.625rem;
-  font-weight: 500;
+  padding: 6px 10px;
+  background: rgb(5 5 5 / 0.78);
+  color: var(--text);
+  font-size: 0.6875rem;
+  font-weight: 600;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  backdrop-filter: blur(4px);
   pointer-events: none;
 }
 
@@ -300,7 +314,7 @@ img[data-tone="stock"] { filter: saturate(0.78) sepia(0.08) contrast(1.02); }
 
 .js [data-reveal]:not([data-revealed]) {
   opacity: 0;
-  transform: translate3d(0, 28px, 0);
+  transform: translate3d(0, 26px, 0);
 }
 .js [data-reveal] {
   transition:
@@ -318,33 +332,46 @@ img[data-tone="stock"] { filter: saturate(0.78) sepia(0.08) contrast(1.02); }
   clip-path: inset(0 0 0 0);
 }
 
-/* Scroll-linked image drift (progressive enhancement, CSS only). */
-@supports (animation-timeline: view()) {
-  @media (prefers-reduced-motion: no-preference) and (min-width: 861px) {
-    [data-drift] {
-      animation: drift linear both;
-      animation-timeline: view();
-      animation-range: cover 0% cover 100%;
-    }
-    @keyframes drift {
-      from { transform: translate3d(0, -6%, 0) scale(1.12); }
-      to { transform: translate3d(0, 6%, 0) scale(1.12); }
-    }
-  }
+/* ---------- Travelling between places ----------
+   The camera moves along the line; the leaving page's words clear the frame
+   and the arriving page's words settle as the camera lands. */
+
+html[data-leaving] main {
+  opacity: 0;
+  transform: translate3d(0, -18px, 0);
+  filter: blur(8px);
+  transition:
+    opacity 340ms var(--ease-in-out),
+    transform 340ms var(--ease-in-out),
+    filter 340ms var(--ease-in-out);
+  pointer-events: none;
+}
+html[data-arriving] main { animation: arrive 1.1s var(--ease-out) 0.5s both; }
+@keyframes arrive {
+  from { opacity: 0; transform: translate3d(0, 22px, 0); }
 }
 
-/* Route crossfade via React <ViewTransition>. */
-::view-transition-old(root),
-::view-transition-new(root) { animation-duration: 380ms; animation-timing-function: var(--ease-out); }
+/* ---------- Intro ---------- */
+
+html[data-intro="playing"] { overflow: hidden; }
+html[data-intro="playing"] body > :is(header, main, footer, [data-chrome]) { opacity: 0; pointer-events: none; }
+html[data-intro="reveal"] body > :is(header, main, footer, [data-chrome]) { animation: intro-in 1.3s var(--ease-out) both; }
+@keyframes intro-in {
+  from { opacity: 0; transform: translate3d(0, 14px, 0); }
+}
+
+@media print {
+  .js [data-reveal] { opacity: 1 !important; transform: none !important; clip-path: none !important; }
+}
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.001ms !important;
     animation-iteration-count: 1 !important;
+    animation-delay: 0ms !important;
     transition-duration: 0.001ms !important;
     transition-delay: 0ms !important;
     scroll-behavior: auto !important;
   }
   .js [data-reveal]:not([data-revealed]) { opacity: 1; transform: none; clip-path: none; }
-  ::view-transition-group(*), ::view-transition-old(*), ::view-transition-new(*) { animation: none !important; }
 }

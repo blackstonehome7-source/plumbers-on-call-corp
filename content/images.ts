@@ -9,14 +9,6 @@ import type { ImageKey, SiteImage } from "./types";
 const generated = { name: "Generated concept art", url: "", source: "Generated" } as const;
 
 export const images: Record<ImageKey, SiteImage> = {
-  standardBathroom: {
-    src: "/images/illustrative/standard-bathroom.webp",
-    width: 1038,
-    height: 770,
-    alt: "Warm stone vanity with a brushed-brass faucet, large mirror and a glass-enclosed shower.",
-    illustrative: true,
-    credit: generated,
-  },
   bathroomSpa: {
     src: "/images/illustrative/bathroom-spa.webp",
     width: 1672,
@@ -38,14 +30,6 @@ export const images: Record<ImageKey, SiteImage> = {
     width: 1817,
     height: 866,
     alt: "Brick and shingle New England home on a quiet, rain-washed street.",
-    illustrative: true,
-    credit: generated,
-  },
-  brandWall: {
-    src: "/images/illustrative/brand-wall.webp",
-    width: 1672,
-    height: 744,
-    alt: "Dark marble feature wall bearing the Plumbers on Call CORP name above a freestanding tub.",
     illustrative: true,
     credit: generated,
   },

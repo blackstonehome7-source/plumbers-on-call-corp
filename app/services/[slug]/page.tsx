@@ -32,7 +32,7 @@ const process = [
   { title: "You get in touch", body: "Call, or send a request with a few details about the job." },
   { title: "We look at it properly", body: "For larger work we see the space and the existing system before quoting." },
   { title: "A clear scope", body: "You know what will be done and what it involves before work begins." },
-  { title: "The work, finished cleanly", body: "Installed, tested and explained, with the work area left as we found it." },
+  { title: "The work, then a walkthrough", body: "Installed and tested, then explained so you know what was done and how to use it." },
 ];
 
 export default async function ServicePage({ params }: { params: Promise<Params> }) {
@@ -83,6 +83,7 @@ export default async function ServicePage({ params }: { params: Promise<Params> 
           { name: service.name, path: `/services/${service.slug}` },
         ]}
         image={service.image}
+        worldBacked
         actions={
           <>
             {primary}

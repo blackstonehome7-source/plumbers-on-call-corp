@@ -5,7 +5,8 @@ import { projects } from "@/content/projects";
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const url = (path: string) => `${company.url}${path}`;
-  const lastModified = new Date();
+  // Updated by hand when content changes; a per-request date tells crawlers nothing.
+  const lastModified = new Date("2026-11-13");
   return [
     { url: url("/"), lastModified, changeFrequency: "monthly", priority: 1 },
     { url: url("/services"), lastModified, changeFrequency: "monthly", priority: 0.9 },

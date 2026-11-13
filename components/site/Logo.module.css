@@ -1,0 +1,17 @@
+.plate {
+  display: block;
+  padding: 9% 7%;
+  background:
+    linear-gradient(120deg, rgb(255 250 240 / 0.55), rgb(237 227 218 / 0.2)),
+    url("/brand/stone-calcite.webp") center / cover,
+    var(--ivory);
+  box-shadow:
+    0 1px 0 var(--gold),
+    0 18px 40px -22px rgb(0 0 0 / 0.9);
+}
+
+.plate img {
+  width: 100%;
+  height: auto;
+  user-select: none;
+}

@@ -28,7 +28,7 @@ export function MobileCallBar() {
   const hidden = isHome && !pastHero;
 
   return (
-    <div className={styles.bar} role="region" aria-label="Quick contact" data-hidden={hidden ? "" : undefined} inert={hidden}>
+    <div className={styles.bar} data-chrome role="region" aria-label="Quick contact" data-hidden={hidden ? "" : undefined} inert={hidden}>
       <TrackedLink href={company.phone.href} event="phone_click" placement="mobile-bar" className={styles.call}>
         <PhoneIcon />
         <span>

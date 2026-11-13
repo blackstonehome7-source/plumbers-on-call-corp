@@ -1,9 +1,7 @@
 export type ImageKey =
-  | "standardBathroom"
   | "bathroomSpa"
   | "kitchen"
   | "newEnglandHome"
-  | "brandWall"
   | "boiler"
   | "waterHeater"
   | "bathroomModern"

@@ -1,106 +1,105 @@
 import Image from "next/image";
 import Link from "next/link";
-import type { CSSProperties } from "react";
 import { projects } from "@/content/projects";
 import { scopes } from "@/content/scopes";
 import { getService } from "@/content/services";
-import { PageHero } from "@/components/ui/PageHero";
 import { CtaBand } from "@/components/ui/CtaBand";
+import { ArrowUpRight } from "@/components/ui/Icon";
+import { JsonLd } from "@/components/ui/JsonLd";
 import { SiteImage } from "@/components/ui/SiteImage";
-import { pageMetadata } from "@/lib/seo";
+import { breadcrumbJsonLd, pageMetadata } from "@/lib/seo";
 import styles from "./page.module.css";
 
 export const metadata = pageMetadata({
   title: "Our Work | Plumbers on Call CORP",
   description:
-    "Plumbing, heating and remodel work by Plumbers on Call CORP across Greater Boston — documented project stories and the scope of work we take on.",
+    "The plumbing, heating and remodel work Plumbers on Call CORP takes on across Greater Boston, shown as a gallery that fills with project photographs as jobs are documented.",
   path: "/work",
 });
 
 export default function WorkPage() {
   const hasProjects = projects.length > 0;
+  const total = hasProjects ? Math.min(projects.length, 6) : scopes.length;
 
   return (
     <>
-      <PageHero
-        variant="plain"
-        eyebrow="Our work"
-        title="Work that holds up long after we leave."
-        lede={
-          hasProjects ? (
-            <p>Selected projects, documented with photographs from the job.</p>
-          ) : (
-            <>
-              <p>
-                We are photographing and writing up completed projects so you can see the work itself — what
-                the job required, what we did, and how it finished.
-              </p>
-              <p>
-                Until those stories are published, here is the scope of work we are hired for. The images below
-                are illustrative and do not show our completed projects.
-              </p>
-            </>
-          )
-        }
-        crumbs={[{ name: "Our Work", path: "/work" }]}
+      <JsonLd
+        data={breadcrumbJsonLd([
+          { name: "Home", path: "/" },
+          { name: "Our Work", path: "/work" },
+        ])}
       />
 
-      {hasProjects ? (
-        <section className="section section--paper" aria-label="Projects">
-          <div className="container">
-            <ul className={styles.projects}>
-              {projects.map((p) => (
-                <li key={p.slug}>
-                  <Link href={`/work/${p.slug}`} className={styles.project}>
-                    <div className={styles.media}>
-                      <Image
-                        src={p.photos[0].src}
-                        alt={p.photos[0].alt}
-                        fill
-                        sizes="(max-width: 860px) 100vw, 50vw"
-                        style={{ objectFit: "cover" }}
-                      />
-                    </div>
+      <section className={styles.intro} aria-labelledby="work-title">
+        <div className={`container ${styles.col}`}>
+          <p className="eyebrow">Our work</p>
+          <h1 id="work-title" className={styles.title}>
+            Work worth putting <em>on the wall.</em>
+          </h1>
+          {hasProjects ? (
+            <p className={styles.lede}>Selected projects, documented with photographs from the job.</p>
+          ) : (
+            <p className={styles.lede}>
+              This gallery is being hung. We are photographing completed projects so you can see the work
+              itself. Until those are in place, each plate shows a kind of job we are hired for. The images
+              are illustrative and are not our completed projects.
+            </p>
+          )}
+        </div>
+      </section>
+
+      <ol className={styles.plates}>
+        {hasProjects
+          ? projects.slice(0, 6).map((p, i) => (
+              <li key={p.slug} className={styles.plate} data-world-step={i}>
+                <div className={`container ${styles.col}`}>
+                  <article className={styles.card}>
+                    <p className={styles.count}>
+                      {String(i + 1).padStart(2, "0")} / {String(total).padStart(2, "0")}
+                    </p>
                     <p className="caption">
                       {getService(p.category)?.name}
                       {p.location ? ` · ${p.location}` : ""}
                     </p>
-                    <h2 className={styles.title}>{p.title}</h2>
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
-        </section>
-      ) : (
-        <section className="section section--paper" aria-labelledby="scopes-title">
-          <div className="container">
-            <h2 id="scopes-title" className="sr-only">
-              Scope of work
-            </h2>
-            <ul className={styles.scopes}>
-              {scopes.map((s, i) => (
-                <li key={s.title} data-reveal style={{ "--reveal-i": i % 2 } as CSSProperties}>
-                  <Link href={`/services/${s.service}`} className={styles.scope}>
-                    <div className={styles.media}>
-                      <SiteImage image={s.image} fill decorative sizes="(max-width: 860px) 100vw, 50vw" />
+                    <h2 className={styles.name}>{p.title}</h2>
+                    <p className={styles.detail}>{p.challenge}</p>
+                    <Link href={`/work/${p.slug}`} className="btn">
+                      Read the project <ArrowUpRight />
+                    </Link>
+                    <div className={styles.fallback}>
+                      <Image src={p.photos[0].src} alt={p.photos[0].alt} fill sizes="(max-width: 860px) 92vw, 44vw" style={{ objectFit: "cover" }} />
                     </div>
-                    <p className="caption">{getService(s.service)?.name}</p>
-                    <h3 className={styles.title}>{s.title}</h3>
+                  </article>
+                </div>
+              </li>
+            ))
+          : scopes.map((s, i) => (
+              <li key={s.title} className={styles.plate} data-world-step={i}>
+                <div className={`container ${styles.col}`}>
+                  <article className={styles.card}>
+                    <p className={styles.count}>
+                      {String(i + 1).padStart(2, "0")} / {String(total).padStart(2, "0")}
+                    </p>
+                    <p className="caption">Scope of work · Illustrative image</p>
+                    <h2 className={styles.name}>{s.title}</h2>
                     <p className={styles.detail}>{s.detail}</p>
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
-        </section>
-      )}
+                    <Link href={`/services/${s.service}`} className="btn">
+                      {getService(s.service)?.name} <ArrowUpRight />
+                    </Link>
+                    <div className={styles.fallback}>
+                      <SiteImage image={s.image} fill sizes="(max-width: 860px) 92vw, 44vw" />
+                    </div>
+                  </article>
+                </div>
+              </li>
+            ))}
+      </ol>
 
       <CtaBand
         placement="work"
         eyebrow="Your project"
         title="Planning something substantial?"
-        text="A boiler replacement, a new bathroom, a commercial fit-out — tell us about it and we’ll talk through what it involves."
+        text="A boiler replacement, a new bathroom, a commercial fit-out. Tell us about it and we’ll talk through what it involves."
       />
     </>
   );

@@ -1,13 +1,13 @@
 import type { Metadata, Viewport } from "next";
 import { Cormorant_Garamond, Manrope } from "next/font/google";
-import { ViewTransition } from "react";
 import { company } from "@/content/company";
 import { Header } from "@/components/site/Header";
 import { Footer } from "@/components/site/Footer";
 import { MobileCallBar } from "@/components/site/MobileCallBar";
-import { RevealObserver, revealBootScript } from "@/components/ui/RevealObserver";
+import { RevealObserver } from "@/components/ui/RevealObserver";
 import { JsonLd } from "@/components/ui/JsonLd";
-import { businessJsonLd, pageMetadata } from "@/lib/seo";
+import { WorldCanvas, bootScript } from "@/components/world/WorldCanvas";
+import { businessJsonLd } from "@/lib/seo";
 import "./globals.css";
 
 const display = Cormorant_Garamond({
@@ -21,45 +21,40 @@ const display = Cormorant_Garamond({
 const sans = Manrope({
   variable: "--font-manrope",
   subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
+  weight: ["400", "600", "700"],
   display: "swap",
 });
 
+// Page-specific titles, descriptions and canonicals live with each page.
 export const metadata: Metadata = {
   metadataBase: new URL(company.url),
   applicationName: company.name,
+  title: company.name,
   robots: { index: true, follow: true },
   formatDetection: { telephone: true, email: true, address: false },
-  ...pageMetadata({
-    title: "Plumbers on Call CORP | Residential & Commercial Plumbing, Greater Boston",
-    description:
-      "Boilers, water heaters, bathroom plumbing and commercial work across Greater Boston, with 24/7 emergency service. Call (781) 299-5011.",
-    path: "/",
-  }),
 };
 
 export const viewport: Viewport = {
-  themeColor: "#f6f2ea",
-  colorScheme: "light",
+  themeColor: "#050505",
+  colorScheme: "dark",
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    // The inline boot script adds the `js` class before hydration.
+    // The inline boot script sets classes/data attributes before hydration.
     <html lang="en-US" className={`${display.variable} ${sans.variable}`} suppressHydrationWarning>
       <head>
-        <script dangerouslySetInnerHTML={{ __html: revealBootScript }} />
+        <script dangerouslySetInnerHTML={{ __html: bootScript }} />
       </head>
       <body>
         <a className="skip-link" href="#main">
           Skip to content
         </a>
+        <WorldCanvas />
         <Header />
-        <ViewTransition>
-          <main id="main" tabIndex={-1}>
-            {children}
-          </main>
-        </ViewTransition>
+        <main id="main" tabIndex={-1}>
+          {children}
+        </main>
         <Footer />
         <MobileCallBar />
         <RevealObserver />

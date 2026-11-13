@@ -7,7 +7,7 @@ import { company } from "@/content/company";
 import { primaryNav } from "@/content/navigation";
 import { CloseIcon, MenuIcon, PhoneIcon } from "@/components/ui/Icon";
 import { TrackedLink } from "@/components/ui/TrackedLink";
-import { Wordmark } from "./Wordmark";
+import { Logo } from "./Logo";
 import styles from "./Header.module.css";
 
 export function Header() {
@@ -35,18 +35,23 @@ export function Header() {
   };
   const closeMenu = () => dialogRef.current?.close();
 
+  // On the home hero the big slab carries the logo, so the header shows the region instead.
   const overHero = isHome && !scrolled;
-  const isActive = (href: string) => pathname === href || pathname.startsWith(`${href}/`);
+  const current = (href: string) => {
+    if (href === "/") return isHome ? ("page" as const) : undefined;
+    if (pathname === href) return "page" as const;
+    return pathname.startsWith(`${href}/`) ? ("true" as const) : undefined;
+  };
 
   return (
-    <header className={styles.header} data-over-hero={overHero ? "" : undefined}>
+    <header className={styles.header} data-over-hero={overHero ? "" : undefined} data-scrolled={scrolled ? "" : undefined}>
       <div className={styles.inner}>
         <Link href="/" className={styles.brand} aria-label={`${company.name} — home`}>
           <span className={styles.region} aria-hidden={!overHero}>
             {company.region}
           </span>
           <span className={styles.mark} aria-hidden={overHero}>
-            <Wordmark />
+            <Logo />
           </span>
         </Link>
 
@@ -54,11 +59,7 @@ export function Header() {
           <ul>
             {primaryNav.map((item) => (
               <li key={item.href}>
-                <Link
-                  href={item.href}
-                  className={styles.navLink}
-                  aria-current={isActive(item.href) ? "page" : undefined}
-                >
+                <Link href={item.href} className={styles.navLink} aria-current={current(item.href)}>
                   {item.label}
                 </Link>
               </li>
@@ -74,10 +75,12 @@ export function Header() {
           aria-label={`Call ${company.name} at ${company.phone.display}, available ${company.availability}`}
         >
           <PhoneIcon />
-          <span className={styles.callLabel}>
-            <span className={styles.callFull}>Call {company.phone.compact}</span>
-            <span className={styles.callShort}>Call</span>
-          </span>
+          <span className={styles.callFull}>{company.phone.display}</span>
+          <span className={styles.callShort}>Call</span>
+        </TrackedLink>
+
+        <TrackedLink href="/contact" event="request_service_click" placement="header" className={`btn ${styles.request}`}>
+          Request Service
         </TrackedLink>
 
         <button
@@ -107,7 +110,7 @@ export function Header() {
         <div className={styles.sheetInner}>
           <div className={styles.sheetTop}>
             <span className={styles.sheetMark}>
-              <Wordmark />
+              <Logo lazy />
             </span>
             <button type="button" className={styles.closeButton} onClick={closeMenu} autoFocus>
               <CloseIcon />
@@ -115,33 +118,22 @@ export function Header() {
             </button>
           </div>
           <nav aria-label="Mobile">
-            <ul className={styles.sheetList}>
-              <li>
-                <Link href="/" className={styles.sheetLink} aria-current={isHome ? "page" : undefined}>
-                  Home
-                </Link>
-              </li>
-              {primaryNav.map((item) => (
+            <ol className={styles.sheetList}>
+              {primaryNav.map((item, i) => (
                 <li key={item.href}>
-                  <Link
-                    href={item.href}
-                    className={styles.sheetLink}
-                    aria-current={isActive(item.href) ? "page" : undefined}
-                  >
+                  <Link href={item.href} className={styles.sheetLink} aria-current={current(item.href)} onClick={closeMenu}>
+                    <span className={styles.sheetNum}>{String(i + 1).padStart(2, "0")}</span>
                     {item.label}
                   </Link>
                 </li>
               ))}
-            </ul>
+            </ol>
           </nav>
           <div className={styles.sheetFoot}>
-            <p className="caption">Available {company.availability} · {company.region}</p>
-            <TrackedLink
-              href={company.phone.href}
-              event="phone_click"
-              placement="mobile-menu"
-              className="btn btn--dark"
-            >
+            <p className="caption">
+              Available {company.availability} · {company.region}
+            </p>
+            <TrackedLink href={company.phone.href} event="phone_click" placement="mobile-menu" className="btn btn--gold">
               <PhoneIcon /> Call {company.phone.display}
             </TrackedLink>
             <TrackedLink
@@ -149,6 +141,7 @@ export function Header() {
               event="request_service_click"
               placement="mobile-menu"
               className="btn"
+              onClick={closeMenu}
             >
               Request Service
             </TrackedLink>

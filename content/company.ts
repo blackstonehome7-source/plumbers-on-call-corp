@@ -13,6 +13,11 @@ export const company = {
     href: "tel:+17812995011",
     e164: "+17812995011",
   },
+  /**
+   * Text messages to the same number. Set to null if the line cannot receive
+   * texts; the "Text" actions then disappear from the site.
+   */
+  sms: "sms:+17812995011" as string | null,
   email: "plumbersoncallcorp@gmail.com",
   owner: { name: "Antonio Abdallah", title: "President & Owner" },
   region: "Greater Boston",
