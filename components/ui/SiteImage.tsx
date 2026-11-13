@@ -32,7 +32,6 @@ export function SiteImage({ image, sizes, preload, className, fill, drift, hideT
         preload={preload}
         className={className}
         data-drift={drift ? "" : undefined}
-        data-tone={img.credit?.source === "Unsplash" ? "stock" : undefined}
         {...(fill
           ? { fill: true, style: { objectFit: "cover" as const } }
           : { width: img.width, height: img.height })}

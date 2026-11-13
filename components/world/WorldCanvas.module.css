@@ -68,3 +68,8 @@
 .skip:hover { color: var(--text); border-color: var(--text-soft); }
 
 :global(html[data-intro="playing"]) .skip { display: inline-flex; align-items: center; }
+
+/* On narrow screens the flat fallback line would cross the copy: leave it out. */
+@media (max-width: 860px) {
+  .backdrop::after { display: none; }
+}

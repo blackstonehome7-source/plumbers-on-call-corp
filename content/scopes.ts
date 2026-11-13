@@ -9,7 +9,7 @@ export const scopes: { title: string; detail: string; image: ImageKey; service: 
   {
     title: "Primary bath remodel",
     detail: "Rough-in for a relocated shower, freestanding tub filler and double vanity.",
-    image: "bathroomSpa",
+    image: "bathroomModern",
     service: "bathroom-plumbing",
   },
   {
@@ -21,7 +21,7 @@ export const scopes: { title: string; detail: string; image: ImageKey; service: 
   {
     title: "Kitchen fixtures & supply",
     detail: "New sink, faucet, dishwasher and supply lines planned around the cabinetry.",
-    image: "kitchen",
+    image: "residentialPipes",
     service: "residential-plumbing",
   },
   {

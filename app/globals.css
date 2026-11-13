@@ -302,9 +302,6 @@ main:focus { outline: none; }
 
 /* ---------- Imagery ---------- */
 
-/* Stock photography is toned toward the palette so different photographers read as one series. */
-img[data-tone="stock"] { filter: saturate(0.7) sepia(0.1) contrast(1.04) brightness(0.92); }
-
 .illustrative-tag {
   position: absolute;
   right: 12px; bottom: 12px;

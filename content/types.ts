@@ -1,6 +1,4 @@
 export type ImageKey =
-  | "bathroomSpa"
-  | "kitchen"
   | "newEnglandHome"
   | "boiler"
   | "waterHeater"
@@ -18,7 +16,7 @@ export type SiteImage = {
   alt: string;
   /** Illustrative imagery (stock or generated). Always captioned; never presented as company work. */
   illustrative: true;
-  credit?: { name: string; url: string; source: "Unsplash" | "Generated" };
+  credit?: { name: string; url: string; source: "Generated" };
 };
 
 export type ServiceSlug =
