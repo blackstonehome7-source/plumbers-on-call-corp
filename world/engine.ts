@@ -1,16 +1,26 @@
 import {
   ACESFilmicToneMapping,
+  EquirectangularReflectionMapping,
   Fog,
+  HalfFloatType,
   MathUtils,
   PerspectiveCamera,
   PMREMGenerator,
   Scene,
   SRGBColorSpace,
   TextureLoader,
+  Vector2,
   Vector3,
   WebGLRenderer,
+  WebGLRenderTarget,
 } from "three";
 import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
+import { RGBELoader } from "three/addons/loaders/RGBELoader.js";
+import { EffectComposer } from "three/addons/postprocessing/EffectComposer.js";
+import { OutputPass } from "three/addons/postprocessing/OutputPass.js";
+import { RenderPass } from "three/addons/postprocessing/RenderPass.js";
+import { ShaderPass } from "three/addons/postprocessing/ShaderPass.js";
+import { UnrealBloomPass } from "three/addons/postprocessing/UnrealBloomPass.js";
 import { PLATES, PLUMB, SECTION, SECTION_ROOMS, SIGN, VALVE } from "./layout";
 import { applyBaked, exportBakeable } from "./baked";
 import { createMaterials } from "./materials";
@@ -27,6 +37,19 @@ const TALL_FOV = 40;
 const ENV_INTENSITY = 0.42;
 const EXPOSURE = 1.05;
 const BACKGROUND = 0x040404;
+const BLOOM = { strength: 0.32, radius: 0.7, threshold: 0.92 };
+const GRAIN = 0.035;
+
+/** A whisper of film grain, added after tone mapping so it stays even in shadows and highlights. */
+const GrainShader = {
+  uniforms: { tDiffuse: { value: null }, uTime: { value: 0 }, uAmount: { value: GRAIN } },
+  vertexShader: "varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }",
+  fragmentShader: [
+    "uniform sampler2D tDiffuse; uniform float uTime; uniform float uAmount; varying vec2 vUv;",
+    "float hash(vec2 p){ return fract(sin(dot(p, vec2(12.9898, 78.233)) + uTime * 43.37) * 43758.5453); }",
+    "void main(){ vec4 c = texture2D(tDiffuse, vUv); float n = hash(gl_FragCoord.xy) - 0.5; gl_FragColor = vec4(c.rgb + n * uAmount, c.a); }",
+  ].join(" "),
+};
 const INTRO_SECONDS = 3.6;
 const INTRO_REVEAL_AT = 2.5;
 
@@ -85,6 +108,14 @@ export function createWorld(
   scene.environment = pmrem.fromScene(envScene, 0.04).texture;
   scene.environmentIntensity = ENV_INTENSITY;
   pmrem.dispose();
+  // A photographed studio (Poly Haven, CC0) gives the brass real softbox reflections.
+  new RGBELoader().load("/world/env/studio.hdr", (hdr) => {
+    hdr.mapping = EquirectangularReflectionMapping;
+    const gen = new PMREMGenerator(renderer);
+    scene.environment = gen.fromEquirectangular(hdr).texture;
+    gen.dispose();
+    hdr.dispose();
+  });
 
   const camera = new PerspectiveCamera(BASE_FOV, 1, 0.1, 120);
 
@@ -94,7 +125,30 @@ export function createWorld(
     t.colorSpace = SRGBColorSpace;
     return t;
   };
-  const ctx: WorldCtx = { tier, mats: createMaterials(texture("/brand/stone-calcite.webp")), texture };
+  // Data maps (normals, roughness) keep their raw values: no colour-space conversion.
+  const dataTexture = (url: string) => loader.load(url);
+  const ctx: WorldCtx = {
+    tier,
+    mats: createMaterials(
+      texture("/brand/stone-calcite.webp"),
+      dataTexture("/world/tex/wall-normal.webp"),
+      dataTexture("/world/tex/wall-rough.webp"),
+    ),
+    texture,
+  };
+
+  // Post-processing on capable devices: bloom on the brightest light, then grain.
+  let composer: EffectComposer | null = null;
+  let grain: ShaderPass | null = null;
+  if (tier === "full") {
+    const target = new WebGLRenderTarget(1, 1, { type: HalfFloatType, samples: 4 });
+    composer = new EffectComposer(renderer, target);
+    composer.addPass(new RenderPass(scene, camera));
+    composer.addPass(new UnrealBloomPass(new Vector2(1, 1), BLOOM.strength, BLOOM.radius, BLOOM.threshold));
+    composer.addPass(new OutputPass());
+    grain = new ShaderPass(GrainShader);
+    composer.addPass(grain);
+  }
 
   const name = createName(ctx);
   const section = createSection(ctx);
@@ -346,6 +400,8 @@ export function createWorld(
     H = h;
     renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, maxDpr));
     renderer.setSize(w, h, false);
+    composer?.setPixelRatio(renderer.getPixelRatio());
+    composer?.setSize(w, h);
     camera.aspect = w / h;
     measure();
   }
@@ -434,7 +490,12 @@ export function createWorld(
     frame.presence = presenceOf.valve() * level;
     valve.update(frame);
 
-    renderer.render(scene, camera);
+    if (composer) {
+      if (grain) grain.uniforms.uTime.value = time % 10;
+      composer.render(dt);
+    } else {
+      renderer.render(scene, camera);
+    }
     if (frames === 1) opts.onFirstFrame?.();
     frames++;
   }

@@ -22,7 +22,7 @@ const KEY_INTENSITY = 150; // raking spot on the slab
 const KEY_ANGLE = 0.62;
 const POINTER_INTENSITY = 3.2; // small light that follows the pointer
 const UPPER_INTENSITY = 46; // wash on the wall above (About / quiet pages)
-const FILL_INTENSITY = 0.5;
+const FILL_INTENSITY = 0.75;
 const BEAD_SPEED = 2.4; // units per second down the line
 
 const smooth = (a: number, b: number, v: number) => {
@@ -66,11 +66,11 @@ export function createName(ctx: WorldCtx): SceneModule & {
   /* ---- Floor: dark, polished, slightly see-through so mirrored copies read as reflections ---- */
   const floorMat = new MeshStandardMaterial({
     color: 0x0a0a09,
-    roughness: 0.14,
+    roughness: 0.34,
     metalness: 0,
     transparent: true,
     opacity: 0.9,
-    envMapIntensity: 0.22,
+    envMapIntensity: 0.1,
   });
   const floor = new Mesh(new PlaneGeometry(FLOOR.right - FLOOR.left, FLOOR.front - FLOOR.back), floorMat);
   floor.rotation.x = -Math.PI / 2;

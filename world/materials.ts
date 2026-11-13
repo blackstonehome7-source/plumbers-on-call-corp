@@ -1,18 +1,41 @@
-import { Color, MeshBasicMaterial, MeshStandardMaterial, MirroredRepeatWrapping, SRGBColorSpace, type Texture } from "three";
+import {
+  Color,
+  MeshBasicMaterial,
+  MeshStandardMaterial,
+  MirroredRepeatWrapping,
+  RepeatWrapping,
+  SRGBColorSpace,
+  Vector2,
+  type Texture,
+} from "three";
 
 /**
  * The whole world is built from a handful of shared materials: honed dark
  * stone, polished floor, warm ivory, brushed brass, glass and one red accent.
  * Sharing them keeps the look coherent and the shader count low.
  */
-export function createMaterials(stoneTex: Texture) {
+export function createMaterials(stoneTex: Texture, wallNormal: Texture, wallRough: Texture) {
   stoneTex.colorSpace = SRGBColorSpace;
   stoneTex.wrapS = stoneTex.wrapT = MirroredRepeatWrapping;
   stoneTex.repeat.set(2.2, 1.6);
+  // Scanned surface relief (Poly Haven "plastered_wall_04", CC0) so raking light has something to catch.
+  for (const t of [wallNormal, wallRough]) {
+    t.wrapS = t.wrapT = RepeatWrapping;
+    t.repeat.set(9, 8);
+  }
 
   const mats = {
     /** Honed charcoal stone with faint veining (walls, fins). */
-    stone: new MeshStandardMaterial({ color: 0x4f4a43, map: stoneTex, roughness: 0.86, metalness: 0, envMapIntensity: 0.25 }),
+    stone: new MeshStandardMaterial({
+      color: 0x5e584f,
+      map: stoneTex,
+      normalMap: wallNormal,
+      normalScale: new Vector2(0.7, 0.7),
+      roughnessMap: wallRough,
+      roughness: 1,
+      metalness: 0,
+      envMapIntensity: 0.25,
+    }),
     /** Plain dark slab (floor plates, structure). */
     slab: new MeshStandardMaterial({ color: 0x1c1b1a, roughness: 0.78, metalness: 0, envMapIntensity: 0.3 }),
     /** Near-black matte (back walls, voids). */
