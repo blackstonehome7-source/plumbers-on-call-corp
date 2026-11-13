@@ -1,4 +1,4 @@
-import { BufferGeometry, Group, Material, Mesh, MeshStandardMaterial, Scene } from "three";
+import { BufferGeometry, Group, Material, Mesh, MeshStandardMaterial, Object3D, Scene } from "three";
 
 /**
  * Baked geometry.
@@ -87,7 +87,17 @@ export async function exportBakeable(group: Group): Promise<Blob> {
   group.updateMatrixWorld(true);
   const scene = new Scene();
   const mats = new Map<string, MeshStandardMaterial>();
+  // Fixture markers: Blender puts a properly modelled fixture at each one.
+  group.traverse((o) => {
+    if (o.name.startsWith("fixture:")) {
+      const marker = new Object3D();
+      marker.name = o.name;
+      o.matrixWorld.decompose(marker.position, marker.quaternion, marker.scale);
+      scene.add(marker);
+    }
+  });
   for (const src of bakeableMeshes(group)) {
+    if (src.userData.fixture) continue; // stand-in: the bake supplies the real model
     const geo = src.geometry.clone();
     geo.applyMatrix4(src.matrixWorld);
     if (src.matrixWorld.determinant() < 0 && geo.index) {

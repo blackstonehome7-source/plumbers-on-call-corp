@@ -16,6 +16,7 @@ The site matches materials by name and multiplies the baked colours in.
 Preview arguments use the site's coordinates (y up); the script converts.
 """
 import math
+import os
 import sys
 
 import bmesh
@@ -38,6 +39,16 @@ bpy.ops.wm.read_factory_settings(use_empty=True)
 bpy.ops.import_scene.gltf(filepath=src, merge_vertices=True)
 scene = bpy.context.scene
 view = bpy.context.view_layer
+
+# ---- 0. Modelled fixtures --------------------------------------------------
+# The export marks where each fixture stands; the stand-in primitives were left
+# out, and properly modelled versions (scripts/fixtures.py) go in their place.
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import fixtures  # noqa: E402
+
+for marker in [o for o in scene.objects if o.type == "EMPTY" and o.name.startswith("fixture:")]:
+    kind = marker.name.split(":")[1].split(".")[0]
+    fixtures.build(kind, marker.matrix_world.translation.copy(), marker.matrix_world.to_scale())
 
 # ---- 1. Join by material -------------------------------------------------
 groups = {}

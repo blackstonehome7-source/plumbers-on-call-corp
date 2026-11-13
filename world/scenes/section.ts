@@ -8,6 +8,7 @@ import {
   LatheGeometry,
   Mesh,
   MeshBasicMaterial,
+  Object3D,
   PointLight,
   SphereGeometry,
   SpotLight,
@@ -110,6 +111,12 @@ interface Kit {
   wallPipe(mat: Material, r: number, z: number, pts: readonly P2[]): void;
   /** Small tee fitting on the riser at height y (detail only). */
   tee(y: number): void;
+  /**
+   * Marks `parts` as a stand-in for a fixture that Blender models properly
+   * (scripts/bake-world.py). `anchor` and `size` tell the bake where the
+   * modelled fixture goes; the stand-ins are what shows if the bake is absent.
+   */
+  fixture(kind: string, anchor: P3, size: P3, parts: Mesh[]): void;
 }
 
 /** A faucet in profile: straight stem, half-round top, short drop. Reaches toward +x. */
@@ -219,6 +226,16 @@ function createKit(group: Group, ctx: WorldCtx): Kit {
     pipe,
     wallPipe,
     tee,
+    fixture(kind, anchor, size, parts) {
+      for (const part of parts) part.userData.fixture = kind;
+      const marker = new Object3D();
+      marker.name = `fixture:${kind}`;
+      marker.position.set(anchor[0], anchor[1], anchor[2]);
+      marker.scale.set(size[0], size[1], size[2]);
+      marker.matrixAutoUpdate = false;
+      marker.updateMatrix();
+      group.add(marker);
+    },
   };
 }
 
@@ -294,7 +311,8 @@ const buildBathroom: RoomBuilder = (k, y0) => {
     tubProfile.map((p) => new Vector2(p[0], p[1])),
     28,
   );
-  k.mesh(tubGeo, mats.ivory, 2.9, y0, -1.6, 2.25, 1, 1);
+  const tub = k.mesh(tubGeo, mats.ivory, 2.9, y0, -1.6, 2.25, 1, 1);
+  k.fixture("tub", [2.9, y0, -1.6], [1.73, 0.58, 0.77], [tub]);
   k.mesh(k.arcTub, mats.brass, 1.82, y0, -1.6);
 
   // Branch: back to the wall, along it, with drops to shower, vanity and tub filler.
@@ -462,7 +480,8 @@ const buildHeating: RoomBuilder = (k, y0, lamp) => {
   k.box(mats.stone, 0.1, CLEAR, 1.5, -1, y0 + CLEAR / 2, WALL_Z + 0.75); // plant-room partition
 
   // Wall-hung boiler with a lamp indicator.
-  k.box(mats.steel, 0.62, 0.95, 0.38, -4.2, y0 + 1.825, WALL_Z + 0.19);
+  const boiler = k.box(mats.steel, 0.62, 0.95, 0.38, -4.2, y0 + 1.825, WALL_Z + 0.19);
+  k.fixture("boiler", [-4.2, y0 + 1.825, WALL_Z + 0.19], [0.62, 0.95, 0.38], [boiler]);
   if (k.detail) k.box(lamp, 0.18, 0.022, 0.01, -4.2, y0 + 1.56, WALL_Z + 0.384);
 
   // Feed from the riser: high along the wall, down into the boiler.
@@ -541,12 +560,20 @@ const buildWaterHeaters: RoomBuilder = (k, y0, lamp) => {
   k.box(mats.stone, 0.1, CLEAR, 1.4, 3.7, y0 + CLEAR / 2, WALL_Z + 0.7); // partition fin
 
   // Storage tank: base ring, shell, domed top.
-  k.cyl(mats.matte, 0.42, 0.06, TANK_X, y0 + 0.03, TANK_Z);
-  k.cyl(mats.steel, 0.4, 1.69, TANK_X, y0 + 0.905, TANK_Z);
-  k.ball(mats.steel, 0.4, TANK_X, tankTop, TANK_Z, 0.375);
+  k.fixture(
+    "tank",
+    [TANK_X, y0, TANK_Z],
+    [0.8, 1.9, 0.8],
+    [
+      k.cyl(mats.matte, 0.42, 0.06, TANK_X, y0 + 0.03, TANK_Z),
+      k.cyl(mats.steel, 0.4, 1.69, TANK_X, y0 + 0.905, TANK_Z),
+      k.ball(mats.steel, 0.4, TANK_X, tankTop, TANK_Z, 0.375),
+    ],
+  );
 
   // Tankless unit on the wall.
-  k.box(mats.steel, 0.56, 0.78, 0.26, 2.2, unitTop - 0.39, WALL_Z + 0.13);
+  const tankless = k.box(mats.steel, 0.56, 0.78, 0.26, 2.2, unitTop - 0.39, WALL_Z + 0.13);
+  k.fixture("tankless", [2.2, unitTop - 0.39, WALL_Z + 0.13], [0.56, 0.78, 0.26], [tankless]);
   if (k.detail) k.box(lamp, 0.16, 0.022, 0.01, 2.2, y0 + 1.38, WALL_Z + 0.264);
 
   // Cold (aged brass) from the riser to both heaters; hot (brass) brackets it one step out.
@@ -609,10 +636,17 @@ const buildMain: RoomBuilder = (k, y0) => {
   k.cyl(mats.ivory, 0.155, 0.02, METER_X, y, z + 0.12, "z");
 
   // Main shut-off: ball valve with a red lever, drawn open (lever along the pipe).
-  k.ball(mats.brass, 0.15, VALVE_X, y, z);
-  k.cyl(mats.brassDark, 0.028, 0.14, VALVE_X, y + 0.2, z);
-  k.box(mats.red, 0.68, 0.03, 0.06, VALVE_X + 0.3, y + 0.285, z);
-  k.box(mats.red, 0.3, 0.05, 0.075, VALVE_X + 0.49, y + 0.285, z);
+  k.fixture(
+    "valve",
+    [VALVE_X, y, z],
+    [1, 1, 1],
+    [
+      k.ball(mats.brass, 0.15, VALVE_X, y, z),
+      k.cyl(mats.brassDark, 0.028, 0.14, VALVE_X, y + 0.2, z),
+      k.box(mats.red, 0.68, 0.03, 0.06, VALVE_X + 0.3, y + 0.285, z),
+      k.box(mats.red, 0.3, 0.05, 0.075, VALVE_X + 0.49, y + 0.285, z),
+    ],
+  );
 
   if (k.detail) {
     k.cyl(mats.brassDark, 0.13, 0.05, -(HALF_W + FOUND_T) - 0.025, y, z, "x"); // outer sleeve
