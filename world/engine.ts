@@ -53,6 +53,16 @@ const GrainShader = {
 const INTRO_SECONDS = 3.6;
 const INTRO_REVEAL_AT = 2.5;
 
+/** Where the camera looks in each room on a service page: the fixture, measured from the room's floor. */
+const ROOM_FOCUS: ({ x: number; y: number; z: number } | null)[] = [
+  { x: 2.9, y: 0.75, z: -1.6 }, // bathroom: the tub
+  { x: -2.4, y: 1.0, z: -2.6 }, // home: the kitchen run
+  null, // commercial: the whole row
+  { x: -3.4, y: 1.55, z: -3.2 }, // heating: boiler and manifold
+  { x: -3.0, y: 1.15, z: -3.0 }, // water heaters: the tank
+  { x: -1.9, y: 1.05, z: 0.4 }, // emergency: the main shut-off
+];
+
 type Station = "home" | "section" | "room" | "plates" | "plumb" | "valve" | "quiet";
 type Route = { station: Station; index: number };
 type Pose = { p: Vector3; t: Vector3; fov: number };
@@ -245,8 +255,12 @@ export function createWorld(
           fov = Math.min(64, MathUtils.radToDeg(2 * Math.atan((SIGN.width * H) / (2 * d * a.w))));
         }
         const ppu = H / (2 * tanHalf(fov) * d);
-        const follow = Math.min(s, H) + 0.1 * Math.max(0, s - H);
-        const tx = SIGN.x - (a.cx - W / 2) / ppu;
+        // The logo scrolls away with the page; after that the camera keeps sinking down
+        // the line, past the building, and drifts toward it, so the world stays in view
+        // (softly, behind the content) for the whole length of the page.
+        const past = Math.max(0, s - H);
+        const follow = Math.min(s, H) + 0.42 * past;
+        const tx = SIGN.x - (a.cx - W / 2) / ppu + 3.4 * smooth(0, H * 1.5, past);
         const ty = SIGN.y - (H / 2 - a.cy + follow) / ppu;
         out.fov = fov;
         out.t.set(tx, ty, 0);
@@ -273,9 +287,18 @@ export function createWorld(
           out.t.set(0.2, cy - 0.3, 0);
           out.p.set(0.9, cy + 0.3, 13.5);
         } else {
-          // Wide enough to keep the whole room in frame, fixtures at both ends included.
-          out.t.set(-0.5, cy, 0);
-          out.p.set(1.2, cy + 0.55, 10.6);
+          // A close look at the room's main fixture, set right of the words.
+          const focus = ROOM_FOCUS[r.index];
+          if (focus) {
+            const d = 6.6;
+            const half = tanHalf(BASE_FOV) * d * aspect;
+            const fy = SECTION.top - SECTION.floorH * (r.index + 1) + focus.y - s * 0.0012;
+            out.t.set(focus.x - half * 0.34, fy, focus.z);
+            out.p.set(focus.x - half * 0.34 + 1.3, fy + 0.45, focus.z + d);
+          } else {
+            out.t.set(-0.5, cy, 0);
+            out.p.set(1.2, cy + 0.55, 10.6);
+          }
         }
         break;
       }
@@ -470,7 +493,12 @@ export function createWorld(
     frame.presence = presenceOf.name();
     name.update(frame);
 
-    section.setActive(route.station === "section" ? stepFocus(0.75) : route.station === "room" ? route.index : -1);
+    // On Home the camera sinks past the building: light whichever room it is level with.
+    const storey = (SECTION.top - shown.t.y) / SECTION.floorH - 0.5;
+    const passing = storey > -0.9 ? MathUtils.clamp(storey, 0, SECTION.count - 1) : -1;
+    section.setActive(
+      route.station === "section" ? stepFocus(0.75) : route.station === "room" ? route.index : route.station === "home" ? passing : -1,
+    );
     frame.presence = presenceOf.section() * level;
     section.group.visible = frame.presence > 0.001;
     if (section.group.visible) section.update(frame);

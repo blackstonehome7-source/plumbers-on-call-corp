@@ -153,6 +153,18 @@ main:focus { outline: none; }
 .section--clear { background: transparent; }
 .section + .section { border-top: 1px solid var(--rule); }
 
+/* Where the 3D world is running at full quality, content sits on smoked glass:
+   the lit rooms and the brass line stay present as soft light behind the words. */
+@supports (backdrop-filter: blur(1px)) {
+  html[data-world="on"][data-tier="full"] :is(.section, .section--paper, .section--dark) {
+    background: rgb(5 5 5 / 0.56);
+    backdrop-filter: blur(18px) saturate(1.15);
+    -webkit-backdrop-filter: blur(18px) saturate(1.15);
+  }
+  html[data-world="on"][data-tier="full"] .section--paper { background: rgb(14 13 12 / 0.6); }
+  html[data-world="on"][data-tier="full"] .section--dark { background: rgb(2 2 2 / 0.68); }
+}
+
 /* ---------- Typography primitives ---------- */
 
 .eyebrow {

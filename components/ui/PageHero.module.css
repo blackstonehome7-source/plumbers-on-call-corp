@@ -91,5 +91,5 @@
 
 /* The 3D world carries the picture: keep the image only as a fallback. */
 :global(html[data-world="on"]) .worldBacked .media { visibility: hidden; }
-.worldBacked { background: linear-gradient(90deg, rgb(5 5 5 / 0.84) 0%, rgb(5 5 5 / 0.5) 42%, transparent 68%); }
+.worldBacked { background: linear-gradient(90deg, rgb(5 5 5 / 0.93) 0%, rgb(5 5 5 / 0.86) 36%, rgb(5 5 5 / 0.35) 52%, transparent 66%); }
 .worldBacked .copy { padding-bottom: clamp(3rem, 7vw, 6rem); }
