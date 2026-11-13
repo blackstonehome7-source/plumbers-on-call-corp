@@ -1,7 +1,30 @@
 # Plumbers on Call CORP — website
 
 Marketing site for Plumbers on Call CORP (residential & commercial plumbing, Greater Boston, 24/7).
-Next.js 16 App Router · React 19 · TypeScript · CSS Modules. No UI or animation libraries.
+Next.js 16 App Router · React 19 · TypeScript · CSS Modules · three.js for the 3D world.
+
+## The idea: "True to the line"
+
+One persistent 3D world sits behind every page. A single brass line runs through dark stone; each page is a place along it, and changing page moves the camera along the line.
+
+| Page | Place | Scene file |
+| --- | --- | --- |
+| Home | The Name: the official logo on a lit ivory slab | `world/scenes/name.ts` |
+| Services, service pages | The Section: a building in cut-away, one room per service | `world/scenes/section.ts` |
+| Our Work | The Plates: photographs on stone fins | `world/scenes/plates.ts` |
+| About | The Plumb: a brass plumb bob with real pendulum motion | `world/scenes/plumb.ts` |
+| Contact | The Valve: a slot of light and a quarter-turn valve | `world/scenes/valve.ts` |
+
+- `world/layout.ts` is the map (where everything stands). `world/engine.ts` owns the renderer, camera poses per route, page-to-page travel and the intro. `world/materials.ts` is the shared material set.
+- `components/world/WorldCanvas.tsx` loads the engine after first paint, picks a tier and intercepts internal links so the camera starts moving before the page changes.
+- Tiers: **full** (desktop), **lite** (phones / low-power), **static** (no WebGL, reduced motion, data saver, or `?world=off`): a flat backdrop, and the pages show ordinary images instead.
+- Pages talk to the world through DOM hooks: `data-world-anchor="sign"` (where the camera frames the logo on Home), `data-world-step="<n>"` (which room or plate is in view) and `signalWorld()` (Contact opens the valve).
+- The intro plays once per browser session on the homepage and can be skipped. In development, `window.__world` exposes the scene and `tick(n)` for inspection.
+- Every word on the site is ordinary server-rendered HTML above the canvas; the canvas is decorative.
+
+## Logo
+
+`public/brand/logo.webp` is the official logo exactly as supplied (black lettering with gold edges), with only its ivory background made transparent by `scripts/prepare-logo.mjs`. It is always shown on ivory stone: the 3D slab on Home and a small ivory plate in the header, menu and footer. It is never recoloured, redrawn or mirrored.
 
 ## Run locally
 
@@ -25,29 +48,19 @@ node --test lib/inquiry.test.ts   # inquiry validation tests (Node 22.6+/24)
 | `content/scopes.ts` | "Kinds of work we take on" shown while there are no projects. |
 | `content/images.ts` | Every image with alt text and provenance. All current images are illustrative and are labeled on the page. |
 | `app/` | Routes (see below), `sitemap.ts`, `robots.ts`, `api/inquiry/route.ts`. |
-| `components/site` | Header (desktop nav + `<dialog>` mobile menu), Footer, MobileCallBar, Wordmark. |
-| `components/home` | Home sections: Hero, PocStandard, ServicesShowcase, WorkPreview, WhyPoc, AboutBridge, AreaPreview, Testimonials. |
+| `components/site` | Header (desktop nav + `<dialog>` mobile menu), Footer, MobileCallBar, Logo plate. |
+| `components/home`, `components/contact` | Home hero (logo anchor) and the Contact action list. |
 | `components/ui` | Shared primitives: PageHero, CtaBand, SiteImage, TrackedLink, Icon, JsonLd, RevealObserver. |
 | `components/forms` | InquiryForm (client). |
 | `lib/` | `inquiry.ts` (validation/spam/email formatting, shared by client and server), `seo.ts` (metadata + JSON-LD), `analytics.ts`. |
 | `app/globals.css` | Design tokens (palette, type scale, spacing, motion) and global primitives (`.btn`, `.eyebrow`, `.display-*`, `.container`, `[data-reveal]`). |
-| `public/brand` | Approved wordmark renditions, hero stone, stone texture. |
+| `public/brand` | Official logo and the stone texture. `public/world/plates` holds texture-sized images for the gallery. |
 | `public/images` | `illustrative/` (generated scenes from the phase1 project) and `stock/` (Unsplash). |
-| `scripts/prepare-brand-assets.mjs` | Regenerates `public/brand`, illustrative crops and `og.jpg` from the phase1 approved artwork. |
+| `scripts/prepare-logo.mjs` | Regenerates `public/brand/logo*.webp` from the official logo PNG. |
 
 ## Routes
 
 `/` · `/services` · `/services/{boilers-heating, water-heaters, bathroom-plumbing, residential-plumbing, commercial-plumbing, emergency-plumbing}` · `/work` · `/work/[slug]` (real projects only) · `/about` · `/service-areas` · `/contact` (`?service=<slug>` preselects the service) · `/privacy` · 404.
-
-## Brand assets
-
-The wordmark is the owner-approved v6 artwork (`Documents/ChatGPT/3d WEB/plumbers-on-call-phase1`). It is never redrawn:
-- `wordmark.webp` — the unaltered crop, used only on the hero stone it came from.
-- `wordmark-alpha.webp` — the same pixels made transparent by colour-to-alpha against the original stone, for header, footer and menu.
-
-## Motion
-
-CSS only, plus one IntersectionObserver (`RevealObserver`). Content is server-rendered visible; an inline head script adds `html.js` so unseen `[data-reveal]` elements start hidden and fade in. If JS fails, a 3.5 s safety net removes the class. Image drift uses CSS scroll-driven animations (progressive enhancement, desktop only). Route crossfades use React `<ViewTransition>`. `prefers-reduced-motion` disables all of it.
 
 ## Contact form and booking
 
