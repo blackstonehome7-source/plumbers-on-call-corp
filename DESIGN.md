@@ -62,13 +62,14 @@ A scene is one full viewport.
 ### Home — the Name
 Job: in five seconds, who this is, what they do, where, and how to call.
 1. **The Name.** The reference frame for the whole site.
-2. **The Standard.** "Precision in every detail." A lit marble niche with a
-   brass valve and its joints in close-up. The four "why" points, short.
-3. **The Services.** The six services on glass at the left; the room of the
-   service in focus at the right.
-4. **The Work.** Three large plates on the marble wall, lit like a gallery.
+2. **The Services.** The building in section stands in the right of the frame
+   and the camera goes down it floor by floor; the six services stay on glass
+   at the left and the row for the floor in view opens.
+3. **The Standard.** "Precision in every detail." At the foot of the line the
+   camera closes on the main shut-off valve. The four "why" points, short.
+4. **The Work.** Three plates on ivory stone mats.
 5. **The Company.** Owner-led and Greater Boston in one scene, closing on the
-   call to action with the line running on toward Contact.
+   call to action.
 
 ### Services — the Section
 Job: show the six services and lead into each.
@@ -112,8 +113,12 @@ Job: call, text, email or request service.
 
 ## How the quality is reached
 
-1. **Baked light.** Each room's lighting is baked in Blender (Cycles) to a
-   lightmap, extending `scripts/bake-world.py` and `world/baked.ts`.
+1. **Light as on the Name.** Every room has a cove strip where the back wall
+   meets the ceiling, an additive wash down the marble and a pool on the
+   floor (`world/wash.ts`), plus one warm point light in front of its fixture.
+   Contact shadows are baked in Blender (`scripts/bake-world.py`). Full
+   lightmaps were planned and dropped: near-black polished stone shows light
+   as glow and reflection, which a diffuse lightmap cannot carry.
 2. **World-scale marble.** One continuous texture, no mirroring.
 3. **Close cameras, modelled objects.** Stations inside the rooms; fixtures
    modelled in `scripts/fixtures.py`.
@@ -128,6 +133,8 @@ reference image. The reference sets the level, not the content.
 ## Acceptance, per scene
 
 - Rules 1–7 hold in captures at 1440 × 900 and 390 × 844.
+  `node scripts/shots.mjs` takes them with the installed Chrome and the real GPU,
+  and prints the frame rate.
 - Contrast AA; keyboard focus visible; reduced motion and `?world=off` show
   all content.
 - Typecheck, lint, tests and build pass.

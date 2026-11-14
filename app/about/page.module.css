@@ -1,119 +1,124 @@
-/* ---------- The Plumb ---------- */
+/* The Plumb: three instruments hang right of centre, one per scene; the words keep the left of the frame.
+   Each scene is one viewport tall because the camera drops one instrument per viewport of scroll. */
 
-.hero {
+.scene {
   position: relative;
   display: grid;
   align-items: center;
-  min-height: max(100svh, 680px);
-  padding: calc(var(--header-h) + 3rem) 0 4rem;
+  min-height: 100svh;
+  padding: calc(var(--header-h) + 2rem) 0 3rem;
 }
 
-.heroInner { display: grid; grid-template-columns: minmax(0, 0.5fr) minmax(0, 0.5fr); }
-
-.heroCopy {
-  grid-column: 1;
+.col {
+  position: relative;
   display: grid;
   justify-items: start;
 }
 
+/* The instruments begin at about half the frame's width: the words stop short of them. */
+.col > * {
+  width: 100%;
+  max-width: min(35rem, 46vw - var(--gutter));
+}
+
+/* ---------- Plumb: the opening ---------- */
+
 .title {
-  font-size: var(--step-6);
+  /* Three lines must leave room for the panel on a short screen. */
+  font-size: min(var(--step-6), 11.5svh);
   line-height: 0.9;
   letter-spacing: -0.03em;
 }
 
-.title em { font-style: italic; color: var(--gold-light); }
+.title em,
+.claim em,
+.areaTitle em {
+  font-style: italic;
+  color: var(--gold-light);
+}
+
+.card.opening {
+  margin-top: clamp(1.25rem, 3svh, 2.5rem);
+  padding-block: clamp(1.25rem, 3.6svh, 3rem);
+}
 
 .lede {
-  max-width: 50ch;
-  margin-top: 2.25rem;
-  color: var(--text-soft);
+  color: var(--text);
   font-size: var(--step-1);
-  line-height: 1.6;
+  line-height: 1.5;
 }
 
-/* ---------- Story ---------- */
+/* ---------- The words of a scene, on smoked glass ---------- */
 
-.story {
-  display: grid;
-  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
-  gap: clamp(2rem, 6vw, 7rem);
+.card { display: grid; justify-items: start; }
+
+.heading { display: grid; gap: 1rem; }
+
+.word {
+  font-size: var(--step-5);
+  line-height: 0.98;
+  letter-spacing: -0.02em;
 }
 
-.story h2 { max-width: 16ch; }
+.claim {
+  font-size: var(--step-2);
+  line-height: 1.15;
+  letter-spacing: -0.006em;
+}
 
-.storyText {
-  display: grid;
-  gap: 1.4rem;
-  align-content: start;
-  max-width: 58ch;
+.text {
+  max-width: 34rem;
+  margin-top: 1.25rem;
   color: var(--text-soft);
-  font-size: var(--step-1);
-  line-height: 1.6;
+  font-size: var(--step-0);
 }
 
-/* ---------- Plumb / Level / True ---------- */
+/* ---------- Leadership: an ivory stone plate ---------- */
 
-.checks {
+.plate {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  margin: 0;
+  justify-items: start;
+  gap: 1rem;
+  padding: clamp(1.75rem, 1.1rem + 2.2vw, 3rem);
+  background: var(--ivory);
+  border-radius: var(--radius);
+  color: var(--ivory-ink);
+  /* Honed stone: a lit top edge, a shaded foot, and the plate standing off the wall. */
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.7),
+    inset 0 -2px 0 rgb(21 21 20 / 0.14),
+    0 2.5rem 5rem -2.5rem rgb(0 0 0 / 0.85);
+}
+
+.plate ::selection { background: var(--ivory-ink); color: var(--ivory); }
+
+.plateName {
+  color: var(--ivory-ink);
+  font-size: var(--step-4);
+  line-height: 1;
+  letter-spacing: -0.016em;
+}
+
+.plateRole {
+  padding-top: 1rem;
+  border-top: 1px solid rgb(21 21 20 / 0.3);
+  font-size: var(--step--1);
+  font-weight: 600;
+  letter-spacing: 0.2em;
+  line-height: 1.3;
+  text-transform: uppercase;
+}
+
+.answer { margin-top: 1rem; }
+
+.answer .text { margin-top: 0; }
+
+.reach {
+  display: grid;
+  margin: 0.75rem 0 0;
   padding: 0;
   list-style: none;
 }
-
-.checks li {
-  display: grid;
-  align-content: start;
-  padding: 0 clamp(1.25rem, 3vw, 3rem) 0.5rem;
-  border-left: 1px solid var(--gold);
-}
-
-.word {
-  font-family: var(--font-display);
-  font-size: var(--step-5);
-  font-style: italic;
-  line-height: 1;
-  color: var(--text);
-}
-
-.meaning {
-  margin-top: 0.6rem;
-  color: var(--gold-text);
-  font-size: 0.75rem;
-  font-weight: 600;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
-}
-
-.checks h3 {
-  margin-top: clamp(1.75rem, 4vw, 3.5rem);
-  font-size: var(--step-2);
-}
-
-.body { margin-top: 0.8rem; color: var(--text-soft); }
-
-/* ---------- Leadership ---------- */
-
-.leader {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-  gap: clamp(2rem, 6vw, 7rem);
-  align-items: end;
-}
-
-.role {
-  margin-top: 1rem;
-  color: var(--gold-text);
-  font-size: 0.875rem;
-  font-weight: 600;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
-}
-
-.leaderText { display: grid; gap: 1.25rem; justify-items: start; max-width: 50ch; color: var(--text-soft); }
-
-.reach { display: grid; margin: 0; padding: 0; list-style: none; }
 
 .reach a {
   display: inline-flex;
@@ -122,17 +127,46 @@
   color: var(--text);
   font-family: var(--font-display);
   font-size: var(--step-2);
-  text-decoration: none;
+  line-height: 1.15;
+  text-decoration: underline;
+  text-decoration-color: var(--gold);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.22em;
   overflow-wrap: anywhere;
+  transition: color var(--dur-1) var(--ease-out);
 }
 
 .reach a:hover { color: var(--gold-light); }
 
-@media (max-width: 860px) {
-  .hero { align-items: end; min-height: 100svh; padding-bottom: 3rem; }
-  .heroInner { grid-template-columns: 1fr; }
-  .heroCopy { grid-column: 1; padding-top: 46svh; }
-  .story, .leader { grid-template-columns: 1fr; }
-  .checks { grid-template-columns: 1fr; gap: 2.5rem; }
-  .storyText { font-size: var(--step-0); }
+/* ---------- Service area: closes the page ---------- */
+
+.area {
+  position: relative;
+  padding: 0 0 var(--section);
+}
+
+.areaTitle {
+  font-size: var(--step-4);
+  line-height: 1.02;
+  letter-spacing: -0.016em;
+}
+
+.areaLink { margin-top: 1.25rem; color: var(--text); }
+
+/* ---------- Phones and upright screens ----------
+   The camera centres the instrument when the frame is taller than wide (world/engine.ts),
+   so the instrument takes the top of the screen and the words sit below it on full-width glass. */
+
+@media (max-width: 860px), (orientation: portrait) {
+  .scene {
+    align-items: end;
+    padding: 46svh 0 2.5rem;
+  }
+
+  .col > * { max-width: min(40rem, 100%); }
+
+  /* No instrument of its own: the square stays in view above the plate. */
+  .leader { min-height: 0; }
+
+  .area { padding-bottom: calc(var(--section) * 0.75); }
 }

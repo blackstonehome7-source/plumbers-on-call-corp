@@ -376,8 +376,9 @@ export function createWorld(
         const v = s / H;
         const drift = PLUMB.sceneDrop * Math.min(v, PLUMB.scenes - 1) + 0.25 * Math.max(0, v - (PLUMB.scenes - 1));
         if (tall) {
-          out.t.set(PLUMB.x, PLUMB.bobY + 1.15 - drift, 0);
-          out.p.set(PLUMB.x + 0.35, PLUMB.bobY + 1.3 - drift, 8.2);
+          // Framed low, so each instrument sits in the open top of a phone screen above its words.
+          out.t.set(PLUMB.x, PLUMB.bobY - 0.7 - drift, 0);
+          out.p.set(PLUMB.x + 0.35, PLUMB.bobY - 0.55 - drift, 8.2);
         } else {
           // Words on the left, the bob right of centre, the line at the frame's right edge.
           out.t.set(PLUMB.x - 0.95, PLUMB.bobY + 0.8 - drift, 0);
@@ -564,7 +565,9 @@ export function createWorld(
       // On Services the top room is already lit behind the page's opening words.
       route.station === "section" ? Math.max(0, stepFocus(0.75)) : route.station === "room" ? route.index : route.station === "home" ? passing : -1,
     );
-    frame.presence = presenceOf.section() * level;
+    // On a phone the building would peek in under the Home hero's buttons: it waits for the first scroll.
+    const held = route.station === "home" && W < H ? smooth(H * 0.2, H * 0.7, window.scrollY) : 1;
+    frame.presence = presenceOf.section() * level * held;
     section.group.visible = frame.presence > 0.001;
     if (section.group.visible) section.update(frame);
 

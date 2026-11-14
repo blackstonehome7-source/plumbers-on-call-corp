@@ -131,3 +131,12 @@
   .actions :global(.btn) { width: 100%; }
   .scroll { display: none; }
 }
+
+/* Phones: the 3D floor line (with its strip of light) crosses the frame 41.6vw below the
+   logo, because the logo's width fixes the scale of the scene. The tagline sits above
+   that line and everything else below it, so the light never runs through the words. */
+@media (max-width: 520px) and (min-aspect-ratio: 9/21) {
+  :global(html[data-world="on"]) .copy { margin-top: 12vw; }
+  :global(html[data-world="on"]) .tagline { min-height: 15vw; font-size: 6vw; line-height: 1.2; }
+  :global(html[data-world="on"]) .line { margin-top: 20vw; }
+}
