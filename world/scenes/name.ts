@@ -20,7 +20,8 @@ import {
   SRGBColorSpace,
 } from "three";
 import { Reflector } from "three/addons/objects/Reflector.js";
-import { FLOOR, LINE, MONO, SIGN, VALVE, WALL } from "../layout";
+import { mergeGeometries } from "three/addons/utils/BufferGeometryUtils.js";
+import { FLOOR, LINE, MONO, SECTION, SIGN, VALVE, WALL, roomBottom } from "../layout";
 import { createWashTexture } from "../wash";
 import type { FrameState, SceneModule, WorldCtx } from "../types";
 
@@ -183,9 +184,15 @@ export function createName(ctx: WorldCtx): SceneModule & {
   group.add(fixed(logo));
 
   /* ---- The line ---- */
-  const lineLen = LINE.top - LINE.bottom;
-  const lineGeo = new CylinderGeometry(LINE.radius, LINE.radius, lineLen, 14, 1, true);
-  lineGeo.translate(0, -lineLen / 2, 0); // origin at the top so it can "drop"
+  // Two lengths: on the bathroom floor of the building the line runs behind the lined wall.
+  const hiddenTop = SECTION.top - 0.04;
+  const hiddenBottom = roomBottom(0) - 0.04;
+  const length = (from: number, to: number) => {
+    const g = new CylinderGeometry(LINE.radius, LINE.radius, from - to, 14, 1, true);
+    g.translate(0, -(LINE.top - from) - (from - to) / 2, 0); // origin at the top so it can "drop"
+    return g;
+  };
+  const lineGeo = mergeGeometries([length(LINE.top, hiddenTop), length(hiddenBottom, LINE.bottom)]);
   const line = new Mesh(lineGeo, mats.brass);
   line.position.set(LINE.x, LINE.top, LINE.z);
   group.add(line);
@@ -304,7 +311,7 @@ export function createName(ctx: WorldCtx): SceneModule & {
     for (const b of beads) {
       const y = top - ((time * BEAD_SPEED + b.userData.offset) % span);
       b.position.y = y;
-      b.visible = lightLevel > 0.6 && line.scale.y >= 1;
+      b.visible = lightLevel > 0.6 && line.scale.y >= 1 && (y > hiddenTop || y < hiddenBottom);
     }
     beadMat.opacity = 0.85 * lightLevel;
   }

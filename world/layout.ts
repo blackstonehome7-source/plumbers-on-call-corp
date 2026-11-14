@@ -63,7 +63,7 @@ export const VALVE = { x: -17.2, y: -0.25, slotW: 0.7, slotH: 3.8 } as const;
  * on a service page and where the room's key light falls. `null`: the whole row.
  */
 export const ROOM_FOCUS: ({ x: number; y: number; z: number } | null)[] = [
-  { x: 2.9, y: 0.75, z: -1.6 }, // bathroom: the tub
+  { x: 2.25, y: 0.55, z: -1.36 }, // bathroom: the tub
   { x: -2.4, y: 1.0, z: -2.6 }, // home: the kitchen run
   null, // commercial: the whole row
   { x: -3.4, y: 1.55, z: -3.2 }, // heating: boiler and manifold

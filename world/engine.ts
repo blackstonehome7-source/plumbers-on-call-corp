@@ -29,6 +29,7 @@ import { createPlates } from "./scenes/plates";
 import { createPlumb } from "./scenes/plumb";
 import { createSection } from "./scenes/section";
 import { createValve } from "./scenes/valve";
+import BATH from "./scenes/bathroom.layout.json";
 import type { FrameState, Tier, WorldCtx } from "./types";
 
 /* Tunables */
@@ -64,6 +65,21 @@ const SECTION_DISTANCE = 9.6;
 /** How far the camera may move sideways before the frame leaves the building. */
 const SECTION_SWAY = 1.0;
 
+/**
+ * The bathroom floor is entered, not looked at from outside: the camera stands at
+ * the cut of the building with a wider lens (scripts/bathroom.py renders from the
+ * same standpoint). Choosing something on the floor turns the eye toward it.
+ */
+const BATH_ASPECT = 1.6; // the frame the room was composed for; narrower screens widen the lens to keep it
+/** Sideways lean of the eye per choice (BATH_ZONES order), in metres; the camera follows at half of it. */
+const BATH_LEAN = [-0.1, -0.7, 0.2, 0.75];
+/** On a phone the frame holds one fixture at a time: where it looks, per choice, and at rest. */
+const BATH_TALL_X = [0.4, -3.35, 0.65, 2.3];
+const BATH_TALL_REST = 0.65;
+const BATH_LEAN_TIME = 0.7;
+/** The words of the floor are set on its back wall: this is their top-left corner there (metres, room coordinates). */
+const BATH_WORDS = { x: -2.6, y: 2.52 };
+
 type Station = "home" | "section" | "room" | "plates" | "plumb" | "valve" | "quiet";
 type Route = { station: Station; index: number };
 type Pose = { p: Vector3; t: Vector3; fov: number };
@@ -73,8 +89,8 @@ export type World = {
   setRoute(pathname: string, instant?: boolean): void;
   startIntro(onReveal: () => void, onDone: () => void): void;
   skipIntro(): void;
-  /** Page-driven signals: "valve" (0..1 open) and "plumb" (impulse). */
-  signal(name: "valve" | "plumb", value: number): void;
+  /** Page-driven signals: "valve" (0..1 open), "plumb" (impulse) and "bath" (what the bathroom floor shows, -1 at rest). */
+  signal(name: "valve" | "plumb" | "bath", value: number): void;
   /** Renders one frame and returns it as an image (used to make static stills). */
   capture(type?: string, quality?: number): Promise<Blob | null>;
   dispose(): void;
@@ -142,6 +158,15 @@ export function createWorld(
     tier,
     mats: createMaterials(texture("/world/tex/marble-color.webp"), dataTexture("/world/tex/marble-orm.webp")),
     texture,
+    environment(url, onLoad) {
+      new RGBELoader().load(url, (hdr) => {
+        hdr.mapping = EquirectangularReflectionMapping;
+        const gen = new PMREMGenerator(renderer);
+        onLoad(gen.fromEquirectangular(hdr).texture);
+        gen.dispose();
+        hdr.dispose();
+      });
+    },
   };
 
   // Post-processing on capable devices: bloom on the brightest light, then grain.
@@ -208,7 +233,10 @@ export function createWorld(
   let steps: { i: number; c: number }[] = [];
   /** Named scenes of a page (data-world-anchor other than the sign): document y of their centre. */
   let anchors: Record<string, number> = {};
+  /** The words of the bathroom floor: an element the world places on the back wall of the room. */
+  let bathWords: HTMLElement | null = null;
   function measure() {
+    bathWords = document.querySelector<HTMLElement>('[data-world-pin="bath"]');
     const y = window.scrollY;
     const el = document.querySelector<HTMLElement>('[data-world-anchor="sign"]');
     if (el) {
@@ -310,7 +338,8 @@ export function createWorld(
         break;
       }
       case "section": {
-        const f = MathUtils.clamp(stepFocus(0.75), -0.2, SECTION.count - 1);
+        const raw = stepFocus(1); // -1 at the top of the page, 0 on the bathroom floor
+        const f = MathUtils.clamp(raw, 0, SECTION.count - 1);
         const cy = SECTION.top - SECTION.floorH * (f + 0.5);
         if (tall) {
           out.t.set(0.2, cy - 0.2, 0);
@@ -330,6 +359,38 @@ export function createWorld(
           const tx = MathUtils.lerp(aim(lo), aim(hi), smooth(0, 1, t));
           out.t.set(tx, cy - 0.15, -1.6);
           out.p.set(tx * 1.12, cy + 0.3, -1.6 + SECTION_DISTANCE);
+        }
+        // The first floor: from the building seen whole, in through the cut, then on down.
+        const inBath = 1 - smooth(0, 0.85, f);
+        if (inBath > 0) {
+          const enter = ease(smooth(-0.92, -0.04, raw));
+          const y0 = BATH.y0;
+          let px: number, py: number, pz: number, tx: number, ty: number, fov: number;
+          if (tall) {
+            px = bathLean;
+            py = y0 + 1.5;
+            pz = 3.2;
+            tx = bathLean;
+            ty = y0 + 0.15;
+            fov = TALL_FOV;
+          } else {
+            px = BATH.camera.p[0] + bathLean * 0.5;
+            py = y0 + BATH.camera.p[1];
+            pz = BATH.camera.p[2];
+            tx = BATH.camera.t[0] + bathLean;
+            ty = y0 + BATH.camera.t[1];
+            fov = aspect < BATH_ASPECT ? MathUtils.radToDeg(2 * Math.atan((tanHalf(BATH.camera.fov) * BATH_ASPECT) / aspect)) : BATH.camera.fov;
+          }
+          // Outside: the top floor of the building, whole, before going in.
+          const oy = SECTION.top - SECTION.floorH * 0.5;
+          const ox = tall ? 0.2 : 0.4;
+          const oz = tall ? 23 : 12.5;
+          blendP.set(MathUtils.lerp(ox + 0.6, px, enter), MathUtils.lerp(oy + 0.6, py, enter), MathUtils.lerp(oz, pz, enter));
+          blendT.set(MathUtils.lerp(ox, tx, enter), MathUtils.lerp(oy - 0.2, ty, enter), MathUtils.lerp(-1.6, BATH.back, enter));
+          const wide = MathUtils.lerp(out.fov, fov, enter);
+          out.p.lerp(blendP, inBath);
+          out.t.lerp(blendT, inBath);
+          out.fov = MathUtils.lerp(out.fov, wide, inBath);
         }
         break;
       }
@@ -477,6 +538,10 @@ export function createWorld(
   let frames = 0;
   let lastScroll = window.scrollY;
   let valveTarget = 0;
+  let bathZone = -1;
+  let bathLean = 0;
+  const wordsAt = new Vector3();
+  const wordsRight = new Vector3();
   const frame: FrameState = { time: 0, dt: 0, pointerX: 0, pointerY: 0, presence: 1 };
 
   function resize() {
@@ -502,6 +567,11 @@ export function createWorld(
     pointerX += (rawX - pointerX) * Math.min(1, dt * 4);
     pointerY += (rawY - pointerY) * Math.min(1, dt * 4);
 
+    // The bathroom floor: lean toward what was chosen (on a phone, go and stand in front of it).
+    {
+      const goal = W < H ? (bathZone >= 0 ? BATH_TALL_X[bathZone] : BATH_TALL_REST) : bathZone >= 0 ? BATH_LEAN[bathZone] : 0;
+      bathLean += (goal - bathLean) * (1 - Math.exp(-dt / BATH_LEAN_TIME));
+    }
     desired(route, want);
     if (travel.active) {
       travel.t = Math.min(1, travel.t + dt / travel.dur);
@@ -542,6 +612,25 @@ export function createWorld(
     camera.updateProjectionMatrix();
     camera.lookAt(shown.t.x + pointerX * 0.05 * parallax, shown.t.y, shown.t.z);
 
+    // Set the words of the bathroom on its back wall: where that corner of the wall is on
+    // screen, and how many pixels a metre of wall takes, go to the element as variables.
+    if (bathWords) {
+      if (route.station === "section" && W >= H) {
+        camera.updateMatrixWorld();
+        wordsAt.set(BATH_WORDS.x, BATH.y0 + BATH_WORDS.y, BATH.back).project(camera);
+        wordsRight.set(BATH_WORDS.x + 1, BATH.y0 + BATH_WORDS.y, BATH.back).project(camera);
+        const x = (wordsAt.x * 0.5 + 0.5) * W;
+        const y = (0.5 - wordsAt.y * 0.5) * H;
+        const metre = (wordsRight.x - wordsAt.x) * 0.5 * W;
+        bathWords.style.setProperty("--wall-x", `${x.toFixed(1)}px`);
+        bathWords.style.setProperty("--wall-y", `${y.toFixed(1)}px`);
+        bathWords.style.setProperty("--wall-m", `${metre.toFixed(2)}px`);
+        bathWords.dataset.pinned = "";
+      } else if ("pinned" in bathWords.dataset) {
+        delete bathWords.dataset.pinned;
+      }
+    }
+
     const dist = shown.p.distanceTo(shown.t);
     const fog = scene.fog as Fog;
     fog.near = dist * 0.7 + 5;
@@ -563,8 +652,9 @@ export function createWorld(
     const passing = storey > -0.9 ? MathUtils.clamp(storey, 0, SECTION.count - 1) : -1;
     section.setActive(
       // On Services the top room is already lit behind the page's opening words.
-      route.station === "section" ? Math.max(0, stepFocus(0.75)) : route.station === "room" ? route.index : route.station === "home" ? passing : -1,
+      route.station === "section" ? Math.max(0, stepFocus(1)) : route.station === "room" ? route.index : route.station === "home" ? passing : -1,
     );
+    section.setBath(route.station === "section" ? bathZone : -1, route.station === "section" || (route.station === "room" && route.index === 0));
     // On a phone the building would peek in under the Home hero's buttons: it waits for the first scroll.
     const held = route.station === "home" && W < H ? smooth(H * 0.2, H * 0.7, window.scrollY) : 1;
     frame.presence = presenceOf.section() * level * held;
@@ -652,6 +742,7 @@ export function createWorld(
     skipIntro: finishIntro,
     signal(sig, value) {
       if (sig === "valve") valveTarget = value;
+      else if (sig === "bath") bathZone = Math.round(value);
       else plumb.nudge(value);
     },
     capture(type = "image/webp", quality = 0.86) {

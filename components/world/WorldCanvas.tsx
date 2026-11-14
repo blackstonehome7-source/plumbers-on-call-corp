@@ -10,7 +10,7 @@ import styles from "./WorldCanvas.module.css";
 type Tier = "full" | "lite" | "static";
 
 /** Custom event pages use to talk to the world, e.g. opening the valve on Contact. */
-export type WorldSignal = { name: "valve" | "plumb"; value: number };
+export type WorldSignal = { name: "valve" | "plumb" | "bath"; value: number };
 export const signalWorld = (detail: WorldSignal) => window.dispatchEvent(new CustomEvent("poc:signal", { detail }));
 
 function pickTier(): Tier {

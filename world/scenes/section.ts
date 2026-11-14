@@ -24,6 +24,7 @@ import { LINE, ROOM_FOCUS, SECTION, roomBottom, roomCenter } from "../layout";
 import type { Materials } from "../materials";
 import type { FrameState, SceneModule, WorldCtx } from "../types";
 import { createWashTexture } from "../wash";
+import { createBathroom } from "./bathroom";
 
 /**
  * The Section (Services): a building cut in section like an architect's
@@ -297,71 +298,14 @@ function buildStructure(k: Kit): void {
 
 type RoomBuilder = (k: Kit, y0: number, lamp: Material) => P3[];
 
-/** 0. Bathroom: walk-in shower, floating vanity, freestanding tub. */
-const buildBathroom: RoomBuilder = (k, y0) => {
-  const { mats } = k;
-  const BRANCH = 2.55;
-
-  // Shower: tray, glass panel with a brass top rail, rain head on an arm.
-  k.box(mats.ivory, 1.36, 0.05, 1.3, -4.4, y0 + 0.025, -2.8);
-  k.box(mats.glass, 1.36, 2.1, 0.02, -4.4, y0 + 1.1, -2.16);
-  k.box(mats.brassDark, 1.36, 0.02, 0.03, -4.4, y0 + 2.16, -2.16);
-  k.cyl(mats.brass, 0.022, 0.63, -4.4, y0 + 2.3, WALL_Z + 0.315, "z");
-  k.cyl(mats.brass, 0.15, 0.025, -4.4, y0 + 2.27, -2.85);
-
-  // Vanity: floating slab, vessel basin, faucet arc.
-  const vanityTop = y0 + 0.875;
-  k.box(mats.ivory, 1.6, 0.09, 0.5, -2, vanityTop - 0.045, WALL_Z + 0.25);
-  k.cyl(mats.ivory, 0.2, 0.11, -1.85, vanityTop + 0.055, WALL_Z + 0.25);
-  k.mesh(k.arcSmall, mats.brass, -2.15, vanityTop, WALL_Z + 0.25);
-
-  // Freestanding tub (a lathe bowl stretched along x) with a floor-standing filler.
-  const tubProfile: P2[] = [
-    [0, 0],
-    [0.26, 0],
-    [0.315, 0.035],
-    [0.345, 0.14],
-    [0.368, 0.42],
-    [0.385, 0.565],
-    [0.372, 0.58],
-    [0.352, 0.565],
-    [0.33, 0.3],
-    [0.29, 0.17],
-    [0, 0.15],
-  ];
-  const tubGeo = new LatheGeometry(
-    tubProfile.map((p) => new Vector2(p[0], p[1])),
-    28,
-  );
-  const tub = k.mesh(tubGeo, mats.ivory, 2.9, y0, -1.6, 2.25, 1, 1);
-  k.fixture("tub", [2.9, y0, -1.6], [1.73, 0.58, 0.77], [tub]);
-  k.mesh(k.arcTub, mats.brass, 1.82, y0, -1.6);
-
-  // Branch: back to the wall, along it, with drops to shower, vanity and tub filler.
-  k.tee(y0 + BRANCH);
-  k.pipe(mats.brass, PIPE_R, [
-    [LINE.x, y0 + BRANCH, LINE.z],
-    [LINE.x, y0 + BRANCH, PIPE_Z],
-  ]);
-  k.pipe(mats.brass, PIPE_R, [
-    [-4.4, y0 + 2.3, PIPE_Z],
-    [-4.4, y0 + BRANCH, PIPE_Z],
-    [1.82, y0 + BRANCH, PIPE_Z],
-    [1.82, y0 + 0.07, PIPE_Z],
-    [1.82, y0 + 0.07, -1.6],
-  ]);
-  k.wallPipe(mats.brass, PIPE_R, PIPE_Z, [
-    [-2.15, y0 + BRANCH],
-    [-2.15, vanityTop],
-  ]);
-
-  return [
-    [LINE.x, y0 + BRANCH, LINE.z],
-    [LINE.x, y0 + BRANCH, PIPE_Z],
-    [-4.4, y0 + BRANCH, PIPE_Z],
-    [-4.4, y0 + 2.3, PIPE_Z],
-  ];
-};
+/**
+ * 0. Bathroom: the finished room is its own module (./bathroom.ts), modelled and lit
+ * in Blender. Nothing is exposed here: the branch runs behind the lined wall.
+ */
+const buildBathroom: RoomBuilder = (_k, y0) => [
+  [LINE.x, y0 + 0.3, LINE.z],
+  [LINE.x, y0 + 0.4, LINE.z],
+];
 
 /** 1. Residential: kitchen run with sink and gooseneck, laundry pair on the right. */
 const buildKitchen: RoomBuilder = (k, y0) => {
@@ -727,12 +671,18 @@ const smooth01 = (v: number) => {
 
 /* ── Scene ───────────────────────────────────────────────────────────────── */
 
-export function createSection(ctx: WorldCtx): SceneModule & { setActive(f: number): void } {
+export function createSection(ctx: WorldCtx): SceneModule & {
+  setActive(f: number): void;
+  /** The bathroom floor: what it shows (an index into BATH_ZONES, -1 at rest) and whether its floor mirrors the room. */
+  setBath(zone: number, reflection: boolean): void;
+} {
   const group = new Group();
   const kit = createKit(group, ctx);
   const last = SECTION.count - 1;
 
   buildStructure(kit);
+  const bath = createBathroom(ctx);
+  group.add(bath.group);
 
   // Rooms: one cove strip where the back wall meets the ceiling (own material, dims independently).
   // Gold, and below the bloom threshold: the strip glows, it never clips to white (DESIGN.md rule 2).
@@ -748,11 +698,14 @@ export function createSection(ctx: WorldCtx): SceneModule & { setActive(f: numbe
     const lamp = ctx.mats.lamp.clone();
     lamp.color.copy(lampBase).multiplyScalar(LAMP_DIM);
     lamps.push(lamp);
-    kit.box(lamp, IN_X * 2 - 0.5, 0.03, 0.05, 0, y0 + CLEAR - 0.03, WALL_Z + 0.04);
     const wall = washMat();
+    const floor = washMat();
+    washes.push({ wall, floor });
+    paths.push(toFlowPath(build(kit, y0, lamp)));
+    if (i === 0) return; // the bathroom brings its own baked light
+    kit.box(lamp, IN_X * 2 - 0.5, 0.03, 0.05, 0, y0 + CLEAR - 0.03, WALL_Z + 0.04);
     const wallWash = new Mesh(new PlaneGeometry(IN_X * 2, WASH_WALL_HEIGHT), wall);
     wallWash.position.set(0, y0 + CLEAR - 0.05 - WASH_WALL_HEIGHT / 2, WALL_Z + 0.012);
-    const floor = washMat();
     const floorWash = new Mesh(new PlaneGeometry(IN_X * 2, WASH_FLOOR_DEPTH), floor);
     floorWash.rotation.x = -Math.PI / 2;
     floorWash.position.set(0, y0 + 0.008, WALL_Z + WASH_FLOOR_DEPTH / 2);
@@ -760,8 +713,6 @@ export function createSection(ctx: WorldCtx): SceneModule & { setActive(f: numbe
       m.renderOrder = 1;
       group.add(m);
     }
-    washes.push({ wall, floor });
-    paths.push(toFlowPath(build(kit, y0, lamp)));
   });
 
   // The only two lights. They glide with the focus and are never added or removed.
@@ -837,8 +788,11 @@ export function createSection(ctx: WorldCtx): SceneModule & { setActive(f: numbe
 
     const level = on * presence;
     placeLights();
-    point.intensity = POINT_INTENSITY * level;
-    spot.intensity = SPOT_INTENSITY * level;
+    // The bathroom is lit by its own baked light: the two moving lights stay out of it.
+    const inBath = smooth01(1 - Math.abs(focus));
+    point.intensity = POINT_INTENSITY * level * (1 - inBath);
+    spot.intensity = SPOT_INTENSITY * level * (1 - inBath);
+    bath.update(frame, (LAMP_DIM + (1 - LAMP_DIM) * on * inBath) * presence);
 
     // Lamp strips: the room in focus glows, the others rest at LAMP_DIM.
     for (let i = 0; i < lamps.length; i++) {
@@ -853,7 +807,7 @@ export function createSection(ctx: WorldCtx): SceneModule & { setActive(f: numbe
     if (beads.length > 0) {
       const room = Math.min(last, Math.max(0, Math.round(focus)));
       const path = paths[room];
-      const strength = level * clamp01(1 - 2 * Math.abs(focus - room));
+      const strength = room === 0 ? 0 : level * clamp01(1 - 2 * Math.abs(focus - room));
       const phase = (time / FLOW_PERIOD) % 1;
       for (let i = 0; i < beads.length; i++) {
         const bead = beads[i];
@@ -867,5 +821,13 @@ export function createSection(ctx: WorldCtx): SceneModule & { setActive(f: numbe
     }
   }
 
-  return { group, update, setActive };
+  return {
+    group,
+    update,
+    setActive,
+    setBath(zone, reflection) {
+      bath.setZone(zone);
+      bath.setReflection(reflection);
+    },
+  };
 }

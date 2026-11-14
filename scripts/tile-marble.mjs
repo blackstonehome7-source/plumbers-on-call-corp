@@ -1,6 +1,8 @@
 // Make the marble textures tile without a seam and write them as WebP.
 //
-//   node scripts/tile-marble.mjs <dir with marble-color.png and marble-orm.png>
+//   node scripts/tile-marble.mjs <dir with the PNGs> [name ...]
+//
+// Without names it does marble-color and marble-orm; `stone-color` is the bathroom's stone.
 //
 // The left and bottom edges are cross-faded with the opposite edges, so the
 // texture repeats with no mirror axis and no visible join. The tile that comes
@@ -12,9 +14,10 @@ import sharp from "sharp";
 const BAND = 0.12;
 const SIZE = 2048;
 const dir = process.argv[2];
-if (!dir) throw new Error("usage: node scripts/tile-marble.mjs <dir>");
+if (!dir) throw new Error("usage: node scripts/tile-marble.mjs <dir> [name ...]");
+const names = process.argv.length > 3 ? process.argv.slice(3) : ["marble-color", "marble-orm"];
 
-for (const name of ["marble-color", "marble-orm"]) {
+for (const name of names) {
   const { data, info } = await sharp(path.join(dir, `${name}.png`)).removeAlpha().raw().toBuffer({ resolveWithObject: true });
   const { width: W, height: H, channels: C } = info;
   const bx = Math.round(W * BAND);

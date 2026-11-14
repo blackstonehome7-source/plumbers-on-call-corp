@@ -9,6 +9,8 @@ export interface WorldCtx {
   mats: Materials;
   /** Loads a texture (sRGB). The world re-renders when it arrives. */
   texture(url: string): Texture;
+  /** Loads a small HDR panorama and hands back a prefiltered environment for reflections. */
+  environment(url: string, onLoad: (env: Texture) => void): void;
 }
 
 export interface FrameState {
