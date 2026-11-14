@@ -58,6 +58,7 @@ SURFACES = {
     "matte": dict(color=(0.006, 0.006, 0.006), metallic=0.0, roughness=0.55),
     "red": dict(color=(0.45, 0.03, 0.02), metallic=0.0, roughness=0.35),
     "stone": dict(color=(0.02, 0.02, 0.02), metallic=0.0, roughness=0.18),
+    "stoneHoned": dict(color=(0.02, 0.02, 0.02), metallic=0.0, roughness=0.45),
 }
 for mat in bpy.data.materials:
     spec = SURFACES.get(mat.name.split(".")[0])
@@ -72,7 +73,7 @@ for mat in bpy.data.materials:
     bsdf.inputs["Metallic"].default_value = spec["metallic"]
     bsdf.inputs["Roughness"].default_value = spec["roughness"]
     nt.links.new(bsdf.outputs[0], out.inputs["Surface"])
-    if mat.name.split(".")[0] == "stone":
+    if mat.name.split(".")[0] in ("stone", "stoneHoned"):
         tex = nt.nodes.new("ShaderNodeTexImage")
         tex.image = marble
         tex.projection = "BOX"

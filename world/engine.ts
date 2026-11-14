@@ -21,7 +21,7 @@ import { OutputPass } from "three/addons/postprocessing/OutputPass.js";
 import { RenderPass } from "three/addons/postprocessing/RenderPass.js";
 import { ShaderPass } from "three/addons/postprocessing/ShaderPass.js";
 import { UnrealBloomPass } from "three/addons/postprocessing/UnrealBloomPass.js";
-import { PLATES, PLUMB, SECTION, SECTION_ROOMS, SIGN, VALVE } from "./layout";
+import { PLATES, PLUMB, ROOM_FOCUS, SECTION, SECTION_ROOMS, SIGN, VALVE } from "./layout";
 import { applyBaked, exportBakeable } from "./baked";
 import { createMaterials } from "./materials";
 import { createName } from "./scenes/name";
@@ -53,15 +53,8 @@ const GrainShader = {
 const INTRO_SECONDS = 3.6;
 const INTRO_REVEAL_AT = 2.5;
 
-/** Where the camera looks in each room on a service page: the fixture, measured from the room's floor. */
-const ROOM_FOCUS: ({ x: number; y: number; z: number } | null)[] = [
-  { x: 2.9, y: 0.75, z: -1.6 }, // bathroom: the tub
-  { x: -2.4, y: 1.0, z: -2.6 }, // home: the kitchen run
-  null, // commercial: the whole row
-  { x: -3.4, y: 1.55, z: -3.2 }, // heating: boiler and manifold
-  { x: -3.0, y: 1.15, z: -3.0 }, // water heaters: the tank
-  { x: -1.9, y: 1.05, z: 0.4 }, // emergency: the main shut-off
-];
+/** How far the camera stands from a room's back wall on the Services page. */
+const SECTION_DISTANCE = 11.5;
 
 type Station = "home" | "section" | "room" | "plates" | "plumb" | "valve" | "quiet";
 type Route = { station: Station; index: number };
@@ -264,16 +257,21 @@ export function createWorld(
         break;
       }
       case "section": {
-        const f = MathUtils.clamp(stepFocus(0.75), -0.8, SECTION.count - 1);
+        const f = MathUtils.clamp(stepFocus(0.75), -0.2, SECTION.count - 1);
         const cy = SECTION.top - SECTION.floorH * (f + 0.5);
         if (tall) {
           out.t.set(0.2, cy - 0.2, 0);
           out.p.set(1.2, cy + 0.6, 23);
         } else {
-          // Far enough back that the whole width of the building fits right of the words.
-          const d = MathUtils.clamp(8.2 / (tanHalf(BASE_FOV) * aspect), 12, 24);
-          out.t.set(-2.5, cy, 0);
-          out.p.set(0.7, cy + 0.85, d);
+          // Inside the floor: the room fills the frame and its fixture sits right of the
+          // words (DESIGN.md rule 4). The aim glides from one room's fixture to the next.
+          const lo = MathUtils.clamp(Math.floor(f), 0, SECTION.count - 1);
+          const hi = Math.min(lo + 1, SECTION.count - 1);
+          const fx = MathUtils.lerp(ROOM_FOCUS[lo]?.x ?? 0.3, ROOM_FOCUS[hi]?.x ?? 0.3, MathUtils.clamp(f - lo, 0, 1));
+          const half = tanHalf(BASE_FOV) * SECTION_DISTANCE * aspect;
+          const tx = MathUtils.clamp(fx * 0.55 - half * 0.26, -4.2, 1.5);
+          out.t.set(tx, cy - 0.15, -1.6);
+          out.p.set(tx + 0.9, cy + 0.3, -1.6 + SECTION_DISTANCE);
         }
         break;
       }
@@ -299,14 +297,16 @@ export function createWorld(
         break;
       }
       case "plates": {
-        const f = stepFocus(0.5);
+        // The first plate is already in frame beside the page's opening words.
+        const f = Math.max(-0.14, stepFocus(0.5));
         const x = PLATES.x0 + PLATES.gap * f;
         if (tall) {
           out.t.set(x, -0.35, 0);
           out.p.set(x - 0.5, 0.15, 12.5);
         } else {
-          out.t.set(x - 1.5, 0.2, 0);
-          out.p.set(x - 2.9, 0.7, 8.8);
+          // Close enough that the plate spans about half the frame (DESIGN.md, Our Work).
+          out.t.set(x - 1.25, 0.25, 0);
+          out.p.set(x - 2.3, 0.65, 7.1);
         }
         break;
       }
@@ -328,8 +328,9 @@ export function createWorld(
           out.t.set(VALVE.x + 0.5, 0.5 - drift, 0);
           out.p.set(VALVE.x + 0.9, 0.7 - drift, 12.5);
         } else {
-          out.t.set(VALVE.x - 1.7, 0.25 - drift, 0);
-          out.p.set(VALVE.x - 0.5, 0.55 - drift, 9.2);
+          // The slot of light right of the words, the valve inside the frame beside it.
+          out.t.set(VALVE.x - 0.7, 0.25 - drift, 0);
+          out.p.set(VALVE.x + 0.5, 0.55 - drift, 9.2);
         }
         break;
       }
@@ -494,7 +495,8 @@ export function createWorld(
     const storey = (SECTION.top - shown.t.y) / SECTION.floorH - 0.5;
     const passing = storey > -0.9 ? MathUtils.clamp(storey, 0, SECTION.count - 1) : -1;
     section.setActive(
-      route.station === "section" ? stepFocus(0.75) : route.station === "room" ? route.index : route.station === "home" ? passing : -1,
+      // On Services the top room is already lit behind the page's opening words.
+      route.station === "section" ? Math.max(0, stepFocus(0.75)) : route.station === "room" ? route.index : route.station === "home" ? passing : -1,
     );
     frame.presence = presenceOf.section() * level;
     section.group.visible = frame.presence > 0.001;

@@ -35,7 +35,6 @@ export default function ServicesPage() {
 
       <section className={styles.intro} aria-labelledby="services-title">
         <div className={`container ${styles.col}`}>
-          <p className="eyebrow">Services</p>
           <h1 id="services-title" className={styles.title}>
             One line runs through <em>every</em> building.
           </h1>
@@ -56,7 +55,7 @@ export default function ServicesPage() {
           return (
             <li key={s.slug} id={`level-${i + 1}`} className={styles.level} data-world-step={i}>
               <div className={`container ${styles.col}`}>
-                <article className={styles.card} aria-labelledby={`svc-${s.slug}`}>
+                <article className={`panel ${styles.card}`} aria-labelledby={`svc-${s.slug}`}>
                   <p className={styles.where}>
                     <span>{String(i + 1).padStart(2, "0")}</span> {levels[i]}
                   </p>

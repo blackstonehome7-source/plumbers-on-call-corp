@@ -32,7 +32,6 @@ export default function WorkPage() {
 
       <section className={styles.intro} aria-labelledby="work-title">
         <div className={`container ${styles.col}`}>
-          <p className="eyebrow">Our work</p>
           <h1 id="work-title" className={styles.title}>
             Work worth putting <em>on the wall.</em>
           </h1>
@@ -40,9 +39,8 @@ export default function WorkPage() {
             <p className={styles.lede}>Selected projects, documented with photographs from the job.</p>
           ) : (
             <p className={styles.lede}>
-              This gallery is being hung. We are photographing completed projects so you can see the work
-              itself. Until those are in place, each plate shows a kind of job we are hired for. The images
-              are illustrative and are not our completed projects.
+              The kinds of work we are hired for. Each plate is an illustrative scene, not a completed
+              project; photographs from our own jobs will take their place.
             </p>
           )}
         </div>

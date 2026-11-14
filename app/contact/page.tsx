@@ -55,7 +55,6 @@ export default async function ContactPage({ searchParams }: Props) {
       {/* The Valve: the slot of light stands to the right; the four ways in are on the left. */}
       <section className={styles.hero} aria-labelledby="contact-title">
         <div className={`container ${styles.heroInner}`}>
-          <p className="eyebrow">Contact</p>
           <h1 id="contact-title" className={styles.title}>
             Open <em>the line.</em>
           </h1>

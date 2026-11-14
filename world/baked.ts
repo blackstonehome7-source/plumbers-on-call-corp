@@ -63,6 +63,9 @@ export async function applyBaked(group: Group, url: string): Promise<boolean> {
     let mat = lit.get(name);
     if (!mat) {
       mat = live.clone();
+      // clone() drops shader hooks: keep the world-space marble mapping.
+      mat.onBeforeCompile = live.onBeforeCompile;
+      mat.customProgramCacheKey = live.customProgramCacheKey;
       // Baked shading darkens matte surfaces; polished metal keeps its full reflections.
       // The logo's slab also stays clean: nothing may shade the face the logo sits on.
       const clean = (live as MeshStandardMaterial).metalness > 0.5 || name === "signSlab";

@@ -121,7 +121,7 @@
   padding: 0 1.25rem;
   border: 1px solid var(--rule-strong);
   border-radius: var(--radius);
-  font-size: 1rem;
+  font-size: var(--step-0);
   font-weight: 500;
   cursor: pointer;
   transition:
@@ -200,7 +200,7 @@
 .noticeTitle {
   color: var(--danger);
   font-family: var(--font-sans);
-  font-size: 1rem;
+  font-size: var(--step-0);
   font-weight: 600;
   letter-spacing: 0;
   line-height: 1.4;
@@ -216,7 +216,7 @@
 
 .noticeList a { color: var(--text); }
 
-.noticeCall { font-size: 0.9375rem; }
+.noticeCall { font-size: var(--step-0); }
 
 .phoneLink {
   color: var(--text);

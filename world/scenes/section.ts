@@ -18,7 +18,7 @@ import {
   type BufferGeometry,
   type Material,
 } from "three";
-import { LINE, SECTION, roomBottom, roomCenter } from "../layout";
+import { LINE, ROOM_FOCUS, SECTION, roomBottom, roomCenter } from "../layout";
 import type { Materials } from "../materials";
 import type { FrameState, SceneModule, WorldCtx } from "../types";
 
@@ -35,16 +35,18 @@ import type { FrameState, SceneModule, WorldCtx } from "../types";
 
 /* ── Tunables (integrator: start here) ───────────────────────────────────── */
 
-const LIGHT_COLOR = 0xffdcae;
+const LIGHT_COLOR = 0xffc98f;
 
-/** Warm point light inside the active room. Offset is from (0, roomCenter(f), 0). */
-const POINT_INTENSITY = 46;
+/** Warm point light inside the active room. Offset is from the room's main fixture (ROOM_FOCUS). */
+const POINT_INTENSITY = 16;
 const POINT_DISTANCE = 9;
 const POINT_DECAY = 2;
-const POINT_OFFSET = { x: 0, y: 0.9, z: -0.8 } as const;
+const POINT_OFFSET = { x: 0.2, y: 0.8, z: 1.5 } as const;
+/** Stand-in fixture position for a room without a single hero (the commercial row). */
+const POINT_REST = { x: 0.3, y: 1.1, z: -2.6 } as const;
 
 /** Soft spot from the front-top-right washing the active room. */
-const SPOT_INTENSITY = 170;
+const SPOT_INTENSITY = 120;
 const SPOT_ANGLE = 0.5;
 const SPOT_PENUMBRA = 1;
 const SPOT_DISTANCE = 22;
@@ -52,6 +54,7 @@ const SPOT_DECAY = 2;
 const SPOT_OFFSET = { x: 4.5, y: 3.4, z: 9.5 } as const;
 const SPOT_AIM = { x: 0, y: 0, z: -1.2 } as const;
 
+const LAMP_COLOR = 0xe0a45c;
 /** Lamp strip brightness of an inactive room (active room = 1). */
 const LAMP_DIM = 0.2;
 /** Seconds for the focus to glide to a new room (critically damped). */
@@ -252,20 +255,21 @@ function buildStructure(k: Kit): void {
   // Slab i carries room i; slab -1 is the roof. Each front edge gets a hairline of brass.
   for (let i = -1; i < SECTION.count; i++) {
     const top = roomBottom(i);
-    k.box(mats.slab, IN_X * 2, SECTION.slab, FRONT_Z - WALL_Z, 0, top - SECTION.slab / 2, (FRONT_Z + WALL_Z) / 2);
+    k.box(mats.stoneHoned, IN_X * 2, SECTION.slab, FRONT_Z - WALL_Z, 0, top - SECTION.slab / 2, (FRONT_Z + WALL_Z) / 2);
     k.box(mats.brassDark, SECTION.width, 0.02, 0.014, 0, top - 0.014, FRONT_Z + 0.003);
     // Sleeve where the riser passes through the slab.
     if (k.detail) k.cyl(mats.brassDark, 0.07, SECTION.slab + 0.08, LINE.x, top - SECTION.slab / 2, LINE.z);
   }
 
-  // Side walls and back wall run the full height in one piece.
+  // Side walls and back wall run the full height in one piece. Floors, walls and
+  // back wall are all the house marble (DESIGN.md rule 1).
   const foundTop = roomBottom(SECTION.count - 2);
   for (const side of [-1, 1]) {
-    k.box(mats.slab, WALL_T, height, SECTION.depth, side * (HALF_W - WALL_T / 2), midY, midZ);
+    k.box(mats.stone, WALL_T, height, SECTION.depth, side * (HALF_W - WALL_T / 2), midY, midZ);
     // Foundation: the basement walls are thicker, outward.
     k.box(mats.slab, FOUND_T, foundTop - bottom, SECTION.depth, side * (HALF_W + FOUND_T / 2), (foundTop + bottom) / 2, midZ);
   }
-  k.box(mats.matte, IN_X * 2, height, WALL_T, 0, midY, BACK_Z + WALL_T / 2);
+  k.box(mats.stone, IN_X * 2, height, WALL_T, 0, midY, BACK_Z + WALL_T / 2);
   k.box(mats.slab, (HALF_W + FOUND_T) * 2, FOOTING, SECTION.depth, 0, bottom - FOOTING / 2, midZ);
 }
 
@@ -359,7 +363,7 @@ const buildKitchen: RoomBuilder = (k, y0) => {
   k.mesh(k.arcKitchen, mats.brass, FAUCET_X, counterTop, -3.14, -1, 1, 1); // mirrored: reaches left over the sink
 
   // Laundry: washer and dryer under a short counter, beside a partition fin.
-  k.box(mats.stone, 0.1, CLEAR, 1.3, 2.4, y0 + CLEAR / 2, WALL_Z + 0.65);
+  k.box(mats.stoneHoned, 0.1, CLEAR, 1.3, 2.4, y0 + CLEAR / 2, WALL_Z + 0.65);
   k.box(mats.ivory, 1.52, 0.07, 0.62, 3.96, counterTop - 0.035, WALL_Z + 0.31);
   k.box(mats.steel, 0.62, 0.85, 0.46, 3.61, y0 + 0.425, unitZ);
   k.box(mats.steel, 0.62, 0.85, 0.46, 4.31, y0 + 0.425, unitZ);
@@ -410,7 +414,7 @@ const buildCommercial: RoomBuilder = (k, y0) => {
   const basinUnder = y0 + 0.71;
 
   k.box(mats.steel, 6, 0.7, 0.03, 0, y0 + 1.75, WALL_Z + 0.015); // mirror strip
-  for (const side of [-1, 1]) k.box(mats.stone, 0.06, 2.2, 1.5, side * 3.6, y0 + 1.1, WALL_Z + 0.75);
+  for (const side of [-1, 1]) k.box(mats.stoneHoned, 0.06, 2.2, 1.5, side * 3.6, y0 + 1.1, WALL_Z + 0.75);
   for (const x of BASINS) {
     k.box(mats.ivory, 0.62, 0.15, 0.44, x, basinTop - 0.075, WALL_Z + 0.22);
     k.mesh(k.arcSmall, mats.brass, x - 0.2, basinTop, -3.3);
@@ -477,7 +481,7 @@ const buildHeating: RoomBuilder = (k, y0, lamp) => {
   const boilerUnder = y0 + 1.35;
   const radUnder = y0 + 0.38;
 
-  k.box(mats.stone, 0.1, CLEAR, 1.5, -1, y0 + CLEAR / 2, WALL_Z + 0.75); // plant-room partition
+  k.box(mats.stoneHoned, 0.1, CLEAR, 1.5, -1, y0 + CLEAR / 2, WALL_Z + 0.75); // plant-room partition
 
   // Wall-hung boiler with a lamp indicator.
   const boiler = k.box(mats.steel, 0.62, 0.95, 0.38, -4.2, y0 + 1.825, WALL_Z + 0.19);
@@ -557,7 +561,7 @@ const buildWaterHeaters: RoomBuilder = (k, y0, lamp) => {
   const tankTop = y0 + 1.75;
   const unitTop = y0 + 1.95;
 
-  k.box(mats.stone, 0.1, CLEAR, 1.4, 3.7, y0 + CLEAR / 2, WALL_Z + 0.7); // partition fin
+  k.box(mats.stoneHoned, 0.1, CLEAR, 1.4, 3.7, y0 + CLEAR / 2, WALL_Z + 0.7); // partition fin
 
   // Storage tank: base ring, shell, domed top.
   k.fixture(
@@ -619,7 +623,7 @@ const buildMain: RoomBuilder = (k, y0) => {
   const VALVE_X = -1.7;
 
   // Foundation piers.
-  for (const side of [-1, 1]) k.box(mats.stone, 0.5, CLEAR, 0.5, side * 3, y0 + CLEAR / 2, -2.4);
+  for (const side of [-1, 1]) k.box(mats.stoneHoned, 0.5, CLEAR, 0.5, side * 3, y0 + CLEAR / 2, -2.4);
 
   // The main: through the left foundation wall, straight to the riser.
   const outside = -(HALF_W + FOUND_T) - 0.37;
@@ -713,7 +717,8 @@ export function createSection(ctx: WorldCtx): SceneModule & { setActive(f: numbe
   buildStructure(kit);
 
   // Rooms: one lamp strip under each ceiling (own material, dims independently).
-  const lampBase = ctx.mats.lamp.color.clone();
+  // Gold, and below the bloom threshold: the strip glows, it never clips to white (DESIGN.md rule 2).
+  const lampBase = new Color(LAMP_COLOR);
   const lamps: MeshBasicMaterial[] = [];
   const paths: FlowPath[] = [];
   ROOM_BUILDERS.forEach((build, i) => {
@@ -752,7 +757,18 @@ export function createSection(ctx: WorldCtx): SceneModule & { setActive(f: numbe
 
   const placeLights = () => {
     const cy = roomCenter(focus);
-    point.position.set(POINT_OFFSET.x, cy + POINT_OFFSET.y, POINT_OFFSET.z);
+    // The warm point light stands just in front of the room's main fixture, so the
+    // glow it leaves on the polished wall falls behind the hero object.
+    const lo = Math.min(last, Math.max(0, Math.floor(focus)));
+    const hi = Math.min(last, lo + 1);
+    const t = Math.min(1, Math.max(0, focus - lo));
+    const a = ROOM_FOCUS[lo] ?? POINT_REST;
+    const b = ROOM_FOCUS[hi] ?? POINT_REST;
+    point.position.set(
+      a.x + (b.x - a.x) * t + POINT_OFFSET.x,
+      cy - SECTION.floorH / 2 + a.y + (b.y - a.y) * t + POINT_OFFSET.y,
+      a.z + (b.z - a.z) * t + POINT_OFFSET.z,
+    );
     spot.position.set(SPOT_OFFSET.x, cy + SPOT_OFFSET.y, SPOT_OFFSET.z);
     spot.target.position.set(SPOT_AIM.x, cy + SPOT_AIM.y, SPOT_AIM.z);
   };

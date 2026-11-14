@@ -51,7 +51,6 @@ export default function AboutPage() {
       <section className={styles.hero} aria-labelledby="about-title">
         <div className={`container ${styles.heroInner}`}>
           <div className={styles.heroCopy}>
-            <p className="eyebrow">About the company</p>
             <h1 id="about-title" className={styles.title}>
               Plumb. <br />
               Level. <br />

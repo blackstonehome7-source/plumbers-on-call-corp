@@ -42,7 +42,7 @@
 
 .num {
   color: var(--gold-text);
-  font-size: 0.6875rem;
+  font-size: 0.75rem;
   font-weight: 600;
   letter-spacing: 0.2em;
 }
@@ -100,7 +100,7 @@
 
 .row:hover .name { color: var(--gold-light); }
 
-.summary { color: var(--text-muted); font-size: 0.9375rem; line-height: 1.5; }
+.summary { color: var(--text-muted); font-size: var(--step-0); line-height: 1.5; }
 
 .arrow {
   width: 22px;

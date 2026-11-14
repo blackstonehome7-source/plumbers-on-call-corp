@@ -32,7 +32,7 @@ const WASH_Z = PLATES.z + 3.2;
 /** The spot aims below the plate centre so the pool reaches the floor in front of the fin. */
 const WASH_AIM_Y = PLATES.y - 0.6;
 
-const DEPTH_COLOR = 0xcfd8e6;
+const DEPTH_COLOR = 0xffd2a0;
 const DEPTH_INTENSITY = 10;
 const DEPTH_DISTANCE = 12;
 /** Relative to the last plate: far right, a little above, in front. */
@@ -64,12 +64,19 @@ const POINTER_RATE = 5;
 const FIN_DEPTH = 0.22;
 const FIN_MARGIN = 0.7;
 const FIN_RISE = 0.9;
+/** Ivory stone mat around each photograph: the logo's stone, as a frame. */
+const MAT_MARGIN = 0.13;
+const MAT_DEPTH = 0.016;
+/** The gallery's back wall, behind the fins. */
+const BACK_HEIGHT = 9;
+const BACK_SETBACK = 0.5;
+const BACK_OVERRUN = 7;
 const HAIRLINE_HEIGHT = 0.012;
-const HAIRLINE_DROP = 0.05;
+const HAIRLINE_DROP = 0.18;
 const LAMP_WIDTH = PLATES.w * 0.42;
 const LAMP_HEIGHT = 0.022;
 const LAMP_DEPTH = 0.03;
-const LAMP_RISE = 0.14;
+const LAMP_RISE = 0.21;
 
 // ── Floor rail ──────────────────────────────────────────────────────────
 const RAIL_RADIUS = 0.022;
@@ -130,6 +137,7 @@ export function createPlates(
   const plateAspect = PLATES.w / PLATES.h;
 
   const photoGeo = new PlaneGeometry(PLATES.w, PLATES.h);
+  const matGeo = new BoxGeometry(PLATES.w + MAT_MARGIN * 2, PLATES.h + MAT_MARGIN * 2, MAT_DEPTH);
   const hairlineGeo = new BoxGeometry(PLATES.w, HAIRLINE_HEIGHT, PHOTO_GAP);
   const lampGeo = new BoxGeometry(LAMP_WIDTH, LAMP_HEIGHT, LAMP_DEPTH);
   const lampBase = mats.lamp.color.clone();
@@ -143,7 +151,7 @@ export function createPlates(
 
     // Fin: from the floor to a little above the plate, its face just behind the photograph.
     const finH = top + FIN_RISE - FLOOR.y;
-    const fin = new Mesh(finGeometry(PLATES.w + FIN_MARGIN, finH, FIN_DEPTH, i), mats.stone);
+    const fin = new Mesh(finGeometry(PLATES.w + FIN_MARGIN, finH, FIN_DEPTH, i), mats.stoneHoned);
     fin.position.set(x, FLOOR.y + finH / 2, finFaceZ - FIN_DEPTH / 2);
 
     // Photograph: cover-fit by cropping the texture, never by stretching it.
@@ -158,6 +166,10 @@ export function createPlates(
     photoMat.color.setScalar(PHOTO_FULL * PHOTO_DIM);
     const photo = new Mesh(photoGeo, photoMat);
     photo.position.set(x, y, PLATES.z);
+    // The mat rides with the photograph when it lifts and turns.
+    const mat = new Mesh(matGeo, mats.ivory);
+    mat.position.z = -MAT_DEPTH / 2 - 0.003;
+    photo.add(mat);
 
     const hairline = new Mesh(hairlineGeo, mats.brass);
     hairline.position.set(x, bottom - HAIRLINE_DROP - HAIRLINE_HEIGHT / 2, finFaceZ + PHOTO_GAP / 2);
@@ -195,6 +207,12 @@ export function createPlates(
   jog.position.set(LINE.x, RAIL_Y, LINE.z + jogLength / 2);
 
   group.add(fix(rail), fix(jog), ball(TEE_RADIUS, LINE.z), ball(ELBOW_RADIUS, RAIL_Z));
+
+  // The polished marble wall the fins stand against: lit stone behind every plate.
+  const backLen = lastX - PLATES.x0 + BACK_OVERRUN * 2;
+  const back = new Mesh(new BoxGeometry(backLen, BACK_HEIGHT, 0.3), mats.stone);
+  back.position.set((PLATES.x0 + lastX) / 2, FLOOR.y + BACK_HEIGHT / 2, finFaceZ - FIN_DEPTH - BACK_SETBACK - 0.15);
+  group.add(fix(back));
 
   // ── Lights ──
   const wash = new SpotLight(WASH_COLOR, 0, WASH_DISTANCE, WASH_ANGLE, WASH_PENUMBRA, 2);
