@@ -37,17 +37,29 @@ const SLOT_LIGHT_HEIGHT = 1.4;
 const SLOT_LIGHT_Z = -0.3;
 
 const VALVE_SPOT_COLOR = 0xffe2bd;
-const VALVE_SPOT_INTENSITY = 120;
-const VALVE_SPOT_ANGLE = 0.22;
-const VALVE_SPOT_PENUMBRA = 0.8;
+const VALVE_SPOT_INTENSITY = 70;
+/** Wide enough to hold the whole lever, standing (closed) or lying along the pipe (open). */
+const VALVE_SPOT_ANGLE = 0.38;
+const VALVE_SPOT_PENUMBRA = 0.85;
 const VALVE_SPOT_DISTANCE = 9;
-/** Relative to the valve body: above, slightly right, in front. */
+/**
+ * Relative to the valve body: above, slightly right, in front. From here the lamp's
+ * own mirror image in the polished wall falls outside the cone, so the stone takes
+ * a soft pool of light and never a white glint.
+ */
 const VALVE_SPOT_OFFSET = { x: 0.9, y: 2.4, z: 2.4 };
+/** Where the pool is centred, from the valve body: between the lever's two rest positions. */
+const VALVE_SPOT_AIM = { x: 0.25, y: 0.4 };
 
 // ── Slot glow ───────────────────────────────────────────────────────────
 const GLOW_COLOR = 0xffd9a3;
 const GLOW_CLOSED = 1.5;
-const GLOW_OPEN = 2.6;
+/**
+ * Opening adds gold, not white (DESIGN.md rule 2): the open slot is brighter in
+ * red and green only, so it deepens toward brass instead of clipping.
+ */
+const GLOW_OPEN_COLOR = 0xffc684;
+const GLOW_OPEN = 2.4;
 /** Vertical falloff of the glow: brightest at this fraction of the slot height… */
 const GLOW_PEAK = 0.32;
 /** …easing down to this fraction of full brightness far above and below. */
@@ -71,27 +83,33 @@ const FRAME_Z = 0.01;
 const THRESHOLD_HEIGHT = 0.012;
 
 // ── Branch pipe ─────────────────────────────────────────────────────────
-const PIPE_RADIUS = 0.03;
-const PIPE_Z = 0.22;
+// Sized for the Contact camera (about 9 m back, 32° lens): at 900 px of viewport
+// height one metre is roughly 180 px, so the pipe reads about 16 px thick and the
+// lever about 200 px long. Anything much smaller is a miniature (DESIGN.md rule 4).
+const PIPE_RADIUS = 0.046;
+const PIPE_Z = 0.26;
 /** Pipe start and valve position, as offsets from the slot centre. */
-const PIPE_START_DX = 6.5;
+const PIPE_START_DX = 7.5;
 const VALVE_DX = 1.35;
 /** Past the valve the pipe runs this far before it has turned into the wall. */
-const STUB_LENGTH = 0.35;
-const BEND_RADIUS = 0.08;
-const BRACKET_DX = [0.75, 2.45, 4.15];
+const STUB_LENGTH = 0.6;
+const BEND_RADIUS = 0.13;
+/** From the valve; the first sits clear of the open lever. */
+const BRACKET_DX = [1.45, 3.15, 4.85];
 
 // ── Valve ───────────────────────────────────────────────────────────────
-const BODY_RADIUS = 0.062;
-const BODY_LENGTH = 0.12;
-const COLLAR_RADIUS = 0.055;
-const COLLAR_LENGTH = 0.045;
-const HANDLE_LENGTH = 0.42;
-const HANDLE_WIDTH = 0.036;
-const HANDLE_THICKNESS = 0.008;
+const BODY_RADIUS = 0.125;
+const BODY_LENGTH = 0.3;
+const COLLAR_RADIUS = 0.105;
+const COLLAR_LENGTH = 0.11;
+const BOSS_RADIUS = 0.06;
+const BOSS_LENGTH = 0.06;
+const HANDLE_LENGTH = 1.15;
+const HANDLE_WIDTH = 0.085;
+const HANDLE_THICKNESS = 0.02;
 /** Distance from the stem axis to the short end of the handle. */
-const HANDLE_TAIL = 0.035;
-const GRIP_LENGTH = 0.19;
+const HANDLE_TAIL = 0.09;
+const GRIP_LENGTH = 0.5;
 /** Handle angle about +z: closed stands up (+y), open lies along the pipe (+x). */
 const ANGLE_CLOSED = Math.PI / 2;
 const ANGLE_OPEN = 0;
@@ -102,14 +120,20 @@ const MAX_STEP = 1 / 120;
 
 // ── Light running down the pipe ─────────────────────────────────────────
 const BEAD_COUNT = 3;
-const BEAD_COLOR = 0xffe0b0;
-const BEAD_RADIUS = 0.037;
-const BEAD_LENGTH = 0.22;
-const BEAD_OPACITY = 0.9;
+/**
+ * Deep gold with almost no blue. The beads are added on top of lit brass, so a pale
+ * colour would sum to white on the highlights; this one can only push them further
+ * into gold (DESIGN.md rule 2).
+ */
+const BEAD_COLOR = 0xffb44a;
+const BEAD_RADIUS = 0.059;
+const BEAD_LENGTH = 0.45;
+const BEAD_OPACITY = 0.6;
 /** Units per second with the valve fully open. */
 const BEAD_SPEED = 1.3;
 const BEAD_FADE_IN = 0.5;
-const BEAD_FADE_OUT = 0.25;
+/** Longer than the elbow and the wall leg together, so a bead is already dimming as it turns in. */
+const BEAD_FADE_OUT = 0.5;
 
 type Axis = "x" | "y" | "z";
 
@@ -157,7 +181,7 @@ export function createValve(ctx: WorldCtx): SceneModule & { setOpen(v: number): 
   group.name = "valve";
 
   const unitBox = new BoxGeometry(1, 1, 1);
-  const unitRod = new CylinderGeometry(1, 1, 1, tier === "full" ? 20 : 12);
+  const unitRod = new CylinderGeometry(1, 1, 1, tier === "full" ? 32 : 16);
   // Faceted hexagon: split the vertices so each flat gets its own normal.
   const unitHex = new CylinderGeometry(1, 1, 1, 6).toNonIndexed();
   unitHex.computeVertexNormals();
@@ -187,8 +211,9 @@ export function createValve(ctx: WorldCtx): SceneModule & { setOpen(v: number): 
     return geo;
   };
 
-  const glowBase = new Color(GLOW_COLOR);
-  const glowMat = new MeshBasicMaterial({ color: glowBase.clone().multiplyScalar(GLOW_CLOSED), vertexColors: true });
+  const glowClosed = new Color(GLOW_COLOR).multiplyScalar(GLOW_CLOSED);
+  const glowOpen = new Color(GLOW_OPEN_COLOR).multiplyScalar(GLOW_OPEN);
+  const glowMat = new MeshBasicMaterial({ color: glowClosed.clone(), vertexColors: true });
 
   const back = new Mesh(
     shade(new PlaneGeometry(RECESS_WIDTH, recessH, 1, 12), (y) => glowAt((recessMidY + y - slotBottom) / VALVE.slotH)),
@@ -233,12 +258,13 @@ export function createValve(ctx: WorldCtx): SceneModule & { setOpen(v: number): 
 
   group.add(rod(unitRod, mats.brass, PIPE_RADIUS, runLength, "x", (xStart + xBend) / 2, pipeY, PIPE_Z));
   group.add(rod(unitRod, mats.brass, PIPE_RADIUS, legLength, "z", xEntry, pipeY, legLength / 2));
-  group.add(rod(unitRod, mats.brass, PIPE_RADIUS * 2.1, 0.014, "z", xEntry, pipeY, 0.007));
+  group.add(rod(unitRod, mats.brass, PIPE_RADIUS * 2.1, 0.02, "z", xEntry, pipeY, 0.01));
 
   // The torus arc lies in its local xy plane; map it into the horizontal plane so it
   // runs from the end of the straight run (local +x → world +z of the bend centre)
   // round to the wall leg (local +y → world -x).
-  const elbow = new Mesh(new TorusGeometry(BEND_RADIUS, PIPE_RADIUS, 10, 12, Math.PI / 2), mats.brass);
+  const elbowSegments = tier === "full" ? 20 : 12;
+  const elbow = new Mesh(new TorusGeometry(BEND_RADIUS, PIPE_RADIUS, elbowSegments, elbowSegments, Math.PI / 2), mats.brass);
   elbow.matrixAutoUpdate = false;
   elbow.matrix
     .copy(new Matrix4().makeBasis(new Vector3(0, 0, 1), new Vector3(-1, 0, 0), new Vector3(0, -1, 0)))
@@ -250,41 +276,53 @@ export function createValve(ctx: WorldCtx): SceneModule & { setOpen(v: number): 
   for (const dx of BRACKET_DX) {
     const x = xValve + dx;
     group.add(
-      rod(unitRod, mats.brass, 0.034, 0.012, "z", x, pipeY, 0.006),
-      rod(unitRod, mats.brass, 0.011, PIPE_Z, "z", x, pipeY, PIPE_Z / 2),
-      rod(unitRod, mats.brass, PIPE_RADIUS + 0.01, 0.045, "x", x, pipeY, PIPE_Z),
+      rod(unitRod, mats.brass, 0.06, 0.02, "z", x, pipeY, 0.01),
+      rod(unitRod, mats.brass, 0.018, PIPE_Z, "z", x, pipeY, PIPE_Z / 2),
+      rod(unitRod, mats.brass, PIPE_RADIUS + 0.014, 0.075, "x", x, pipeY, PIPE_Z),
     );
   }
 
   // ── Valve body ──
   const collarX = BODY_LENGTH / 2 + COLLAR_LENGTH / 2;
-  const bossLength = 0.024;
-  const bossZ = PIPE_Z + BODY_RADIUS + bossLength / 2 - 0.004;
+  // The stem boss is sunk a little into the body so the two read as one casting.
+  const bossZ = PIPE_Z + BODY_RADIUS + BOSS_LENGTH / 2 - 0.01;
   group.add(
     rod(unitRod, mats.brass, BODY_RADIUS, BODY_LENGTH, "x", xValve, pipeY, PIPE_Z),
     rod(unitHex, mats.brass, COLLAR_RADIUS, COLLAR_LENGTH, "x", xValve - collarX, pipeY, PIPE_Z),
     rod(unitHex, mats.brass, COLLAR_RADIUS, COLLAR_LENGTH, "x", xValve + collarX, pipeY, PIPE_Z),
-    rod(unitRod, mats.brass, 0.026, bossLength, "z", xValve, pipeY, bossZ),
+    rod(unitRod, mats.brass, BOSS_RADIUS, BOSS_LENGTH, "z", xValve, pipeY, bossZ),
   );
 
   // ── Lever handle: turns about the stem axis (+z, toward the viewer) ──
   const handle = new Group();
-  handle.position.set(xValve, pipeY, bossZ + bossLength / 2 + HANDLE_THICKNESS / 2);
+  handle.position.set(xValve, pipeY, bossZ + BOSS_LENGTH / 2 + HANDLE_THICKNESS / 2);
   handle.rotation.z = ANGLE_CLOSED;
-  const gripX = HANDLE_LENGTH - HANDLE_TAIL - 0.01 - GRIP_LENGTH / 2;
+  const gripX = HANDLE_LENGTH - HANDLE_TAIL - 0.03 - GRIP_LENGTH / 2;
   handle.add(
     slab(unitBox, mats.brassDark, HANDLE_LENGTH, HANDLE_WIDTH, HANDLE_THICKNESS, HANDLE_LENGTH / 2 - HANDLE_TAIL, 0, 0),
-    slab(unitBox, mats.ivory, GRIP_LENGTH, HANDLE_WIDTH + 0.008, HANDLE_THICKNESS + 0.008, gripX, 0, 0),
-    rod(unitHex, mats.brass, 0.02, 0.012, "z", 0, 0, HANDLE_THICKNESS / 2 + 0.006),
+    slab(unitBox, mats.ivory, GRIP_LENGTH, HANDLE_WIDTH + 0.02, HANDLE_THICKNESS + 0.02, gripX, 0, 0),
+    rod(unitHex, mats.brass, 0.05, 0.03, "z", 0, 0, HANDLE_THICKNESS / 2 + 0.015),
   );
   group.add(handle);
 
   // ── Beads of light travelling down the pipe ──
-  const beadGeo = new SphereGeometry(1, 12, 8);
+  const beadGeo = new SphereGeometry(1, 16, 10);
+  // Bright in the middle, fading to nothing at both ends along the flow (local x):
+  // with additive blending black is invisible, so each bead is a soft streak.
+  {
+    const pos = beadGeo.attributes.position;
+    const colors = new Float32Array(pos.count * 3);
+    for (let i = 0; i < pos.count; i++) {
+      const x = pos.getX(i);
+      colors.fill(Math.pow(Math.max(0, 1 - x * x), 1.5), i * 3, i * 3 + 3);
+    }
+    beadGeo.setAttribute("color", new BufferAttribute(colors, 3));
+  }
   const beads: { mesh: Mesh; mat: MeshBasicMaterial }[] = [];
   for (let i = 0; i < BEAD_COUNT; i++) {
     const mat = new MeshBasicMaterial({
       color: BEAD_COLOR,
+      vertexColors: true,
       transparent: true,
       opacity: 0,
       blending: AdditiveBlending,
@@ -318,7 +356,7 @@ export function createValve(ctx: WorldCtx): SceneModule & { setOpen(v: number): 
   slotLight.position.set(VALVE.x, FLOOR.y + SLOT_LIGHT_HEIGHT, SLOT_LIGHT_Z);
   const spot = new SpotLight(VALVE_SPOT_COLOR, 0, VALVE_SPOT_DISTANCE, VALVE_SPOT_ANGLE, VALVE_SPOT_PENUMBRA, 2);
   spot.position.set(xValve + VALVE_SPOT_OFFSET.x, pipeY + VALVE_SPOT_OFFSET.y, PIPE_Z + VALVE_SPOT_OFFSET.z);
-  spot.target.position.set(xValve, pipeY, PIPE_Z);
+  spot.target.position.set(xValve + VALVE_SPOT_AIM.x, pipeY + VALVE_SPOT_AIM.y, PIPE_Z);
   group.add(slotLight, spot, spot.target);
 
   // ── State ──
@@ -344,7 +382,7 @@ export function createValve(ctx: WorldCtx): SceneModule & { setOpen(v: number): 
 
     const openness = clamp01(open);
     const glow = GLOW_CLOSED + (GLOW_OPEN - GLOW_CLOSED) * openness;
-    glowMat.color.copy(glowBase).multiplyScalar(glow);
+    glowMat.color.lerpColors(glowClosed, glowOpen, openness);
     slotLight.intensity = SLOT_LIGHT_INTENSITY * glow * frame.presence;
     spot.intensity = VALVE_SPOT_INTENSITY * frame.presence;
 

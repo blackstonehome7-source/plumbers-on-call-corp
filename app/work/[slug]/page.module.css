@@ -1,32 +1,81 @@
-.cover {
+/* A project: its plate hangs in the right of the frame (the world keeps it in
+   focus) and the story is read in a glass column in the quiet zone at the left. */
+
+.project {
   position: relative;
-  height: clamp(320px, 56vw, 760px);
-  background: var(--surface-2);
+  min-height: 100svh;
+  padding: calc(var(--header-h) + 3rem) 0 4rem;
 }
 
-.story {
+/* Zero-size marker for the world (see page.tsx). */
+.mark {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 0;
+  height: 0;
+}
+
+/* Same split as the gallery (../page.module.css): the column stays left of the plate. */
+.piece {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-  gap: clamp(2rem, 6vw, 7rem);
+  grid-template-columns: minmax(0, min(30rem, 36vw)) minmax(0, 1fr);
+  align-items: start;
+  column-gap: clamp(2rem, 5vw, 5rem);
+}
+
+.piece .column {
+  grid-column: 1;
+  grid-row: 1;
+  padding: clamp(1.5rem, 0.8rem + 1.6vw, 2.5rem);
+}
+
+.title {
+  font-size: var(--step-4);
+  line-height: 1;
+  letter-spacing: -0.016em;
+}
+
+/* Service, town and year, under the title the way a gallery label sets them. */
+.facts {
+  margin-top: 1rem;
+  color: var(--text-soft);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  line-height: 1.4;
+  text-transform: uppercase;
 }
 
 .lead {
-  font-family: var(--font-display);
-  font-size: var(--step-3);
-  line-height: 1.2;
+  margin-top: 1.5rem;
+  color: var(--text);
+  font-size: var(--step-1);
+  line-height: 1.5;
+}
+
+.heading {
+  margin-top: 2.75rem;
+  font-size: var(--step-2);
+  line-height: 1.15;
+}
+
+.body {
+  margin-top: 1rem;
+  color: var(--text-soft);
 }
 
 .work {
   display: grid;
   gap: 0.85rem;
-  margin: 0;
+  margin: 1rem 0 0;
   padding: 0;
   list-style: none;
 }
 
 .work li {
-  padding-left: 1.5rem;
   position: relative;
+  padding-left: 1.5rem;
   color: var(--text-soft);
 }
 
@@ -34,13 +83,42 @@
   content: "";
   position: absolute;
   left: 0;
-  top: 0.75em;
+  top: 0.8em;
   width: 10px;
   height: 1px;
   background: var(--gold);
 }
 
-.related { margin-top: 2.5rem; color: var(--text-muted); }
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem 1.75rem;
+  margin-top: 2.5rem;
+}
+
+.piece .action { max-width: 100%; white-space: normal; }
+
+/* The cover on its ivory mat. It follows the reading the way the plate does. */
+.picture {
+  position: sticky;
+  top: calc(var(--header-h) + 2rem);
+  grid-column: 2;
+  grid-row: 1;
+  padding: clamp(0.5rem, 1vw, 0.875rem);
+  background: var(--ivory);
+  box-shadow: 0 2.5rem 5rem -2.5rem rgb(0 0 0 / 0.85);
+}
+
+.frame {
+  position: relative;
+  aspect-ratio: 64 / 45; /* the plate's own proportion (world/layout.ts PLATES) */
+  overflow: hidden;
+  background: var(--surface-2);
+}
+
+/* With the 3D gallery running, a project on the wall is shown by its plate. */
+:global(html[data-world="on"]) .onWall { display: none; }
 
 .gallery {
   display: grid;
@@ -50,6 +128,25 @@
 
 .photo { margin: 0; }
 
+/* Taller than wide: the camera centres the plate in the upper part of the
+   frame (world/engine.ts), so the column starts below the picture. */
+@media (orientation: portrait) {
+  .piece {
+    grid-template-columns: minmax(0, 1fr);
+    row-gap: 1rem;
+  }
+  .picture { position: static; grid-column: 1; grid-row: auto; }
+  .piece .column { grid-column: 1; grid-row: auto; max-width: 38rem; }
+
+  /* Leave the plate in view above the first words; the column then rises over it on glass. */
+  :global(html[data-world="on"]) .faced { padding-top: 62svh; }
+}
+
 @media (max-width: 860px) {
-  .story, .gallery { grid-template-columns: 1fr; }
+  .project { padding-top: calc(var(--header-h) + 1rem); padding-bottom: 2.5rem; }
+  .piece .column { padding: 1.25rem; }
+  .title { font-size: var(--step-3); }
+  .lead { font-size: var(--step-0); }
+  .heading { margin-top: 2rem; }
+  .gallery { grid-template-columns: minmax(0, 1fr); }
 }

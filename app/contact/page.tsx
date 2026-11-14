@@ -2,7 +2,9 @@ import { company } from "@/content/company";
 import { getService } from "@/content/services";
 import { ContactActions } from "@/components/contact/ContactActions";
 import { InquiryForm } from "@/components/forms/InquiryForm";
+import { PhoneIcon } from "@/components/ui/Icon";
 import { JsonLd } from "@/components/ui/JsonLd";
+import { TrackedLink } from "@/components/ui/TrackedLink";
 import { breadcrumbJsonLd, pageMetadata } from "@/lib/seo";
 import styles from "./page.module.css";
 
@@ -12,11 +14,21 @@ export const metadata = pageMetadata({
   path: "/contact",
 });
 
-const NEXT_STEPS = [
-  "We review your request.",
-  "We contact you by your preferred method to talk it through and, where needed, arrange a visit.",
-  "You get a clear scope before any work begins.",
-];
+/* The steps of a request. The order is real, so they are numbered (DESIGN.md rule 6). */
+const NEXT_STEPS = {
+  /** After the request form has been sent. */
+  form: [
+    "We review your request.",
+    "We contact you by your preferred method to talk it through and, where needed, arrange a visit.",
+    "You get a clear scope before any work begins.",
+  ],
+  /** Without the form, a request starts with a call, a text or an email. */
+  direct: [
+    `Call${company.sms ? ", text" : ""} or email us with a few details about the job.`,
+    "We talk it through with you and, where needed, arrange a visit.",
+    "You get a clear scope before any work begins.",
+  ],
+};
 
 const STATUS_NOTICES: Record<string, { tone: "ok" | "warn"; text: string }> = {
   sent: { tone: "ok", text: "Request received. We’ll be in touch. For anything urgent, please call." },
@@ -43,8 +55,18 @@ export default async function ContactPage({ searchParams }: Props) {
   // the host's environment turns the form on without a code change.
   const canSendInquiries = Boolean(process.env.RESEND_API_KEY && process.env.INQUIRY_TO_EMAIL);
 
+  const steps = (
+    <ol className={styles.next}>
+      {NEXT_STEPS[canSendInquiries ? "form" : "direct"].map((step) => (
+        <li key={step}>{step}</li>
+      ))}
+    </ol>
+  );
+
   return (
-    <>
+    // One wrapper for both sections: the words keep to the left of the frame all the way
+    // down, and the slot of light and the valve stay clear beside them.
+    <div className={styles.page}>
       <JsonLd
         data={breadcrumbJsonLd([
           { name: "Home", path: "/" },
@@ -52,7 +74,7 @@ export default async function ContactPage({ searchParams }: Props) {
         ])}
       />
 
-      {/* The Valve: the slot of light stands to the right; the four ways in are on the left. */}
+      {/* The Valve: the four ways in on the left, the slot of light and the valve to their right. */}
       <section className={styles.hero} aria-labelledby="contact-title">
         <div className={`container ${styles.heroInner}`}>
           <h1 id="contact-title" className={styles.title}>
@@ -66,53 +88,49 @@ export default async function ContactPage({ searchParams }: Props) {
         </div>
       </section>
 
-      <section id="request" className={`section ${styles.request}`} aria-labelledby="request-title">
-        <div className={`container ${styles.requestGrid}`}>
-          <div className={styles.aside}>
-            <p className="eyebrow">Request service</p>
-            <h2 id="request-title" className="display-m">
-              {canSendInquiries ? "Tell us about the job." : "Online requests are coming soon."}
-            </h2>
-            <h3 className={styles.nextTitle}>What happens next</h3>
-            <ol className={styles.next}>
-              {NEXT_STEPS.map((step) => (
-                <li key={step}>{step}</li>
-              ))}
-            </ol>
-          </div>
+      <section id="request" className={styles.request} aria-labelledby="request-title">
+        <div className={`container ${styles.requestInner}`}>
+          {notice ? (
+            <p role="status" className={notice.tone === "ok" ? styles.noticeOk : styles.noticeWarn}>
+              {notice.text} <a href={company.phone.href}>{company.phone.display}</a>
+            </p>
+          ) : null}
 
-          <div className={styles.formCol}>
-            {notice ? (
-              <p role="status" className={notice.tone === "ok" ? styles.noticeOk : styles.noticeWarn}>
-                {notice.text} <a href={company.phone.href}>{company.phone.display}</a>
-              </p>
-            ) : null}
-            {canSendInquiries ? (
-              <>
-                <p className={styles.formIntro}>
-                  Email is optional unless you&rsquo;d like us to reply by email.
-                </p>
+          {canSendInquiries ? (
+            <>
+              <h2 id="request-title" className={`display-m ${styles.heading}`}>
+                Tell us about <em>the job.</em>
+              </h2>
+              <div className={`panel ${styles.formPanel}`}>
+                <p className={styles.formIntro}>Email is optional unless you&rsquo;d like us to reply by email.</p>
                 <InquiryForm defaultService={defaultService} />
-              </>
-            ) : (
-              <div className={styles.soon}>
-                <p>
-                  The request form is being connected. In the meantime, call{company.sms ? ", text" : ""} or email
-                  and we&rsquo;ll take it from there.
-                </p>
-                <div className={styles.soonActions}>
-                  <a href={company.phone.href} className="btn btn--gold">
-                    Call {company.phone.display}
-                  </a>
-                  <a href={`mailto:${company.email}`} className="btn">
-                    Email us
-                  </a>
-                </div>
               </div>
-            )}
-          </div>
+              <h3 className={`display-s ${styles.nextTitle}`}>What happens next</h3>
+              {steps}
+            </>
+          ) : (
+            <>
+              <h2 id="request-title" className={`display-m ${styles.heading}`}>
+                What happens <em>next.</em>
+              </h2>
+              {steps}
+              <div className={styles.reach}>
+                <TrackedLink href={company.phone.href} event="phone_click" placement="contact-next" className="btn btn--gold">
+                  <PhoneIcon /> Call {company.phone.display}
+                </TrackedLink>
+                {company.sms ? (
+                  <TrackedLink href={company.sms} event="phone_click" placement="contact-next-text" className="btn">
+                    Text us
+                  </TrackedLink>
+                ) : null}
+                <a href={`mailto:${company.email}`} className="btn">
+                  Email us
+                </a>
+              </div>
+            </>
+          )}
         </div>
       </section>
-    </>
+    </div>
   );
 }

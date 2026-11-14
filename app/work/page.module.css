@@ -1,15 +1,29 @@
-/* The Plates: each photograph stands in the right of the frame; its caption sits low on the left. */
+/* The Plates: one photograph per viewport. The world hangs it in the right of
+   the frame; its caption sits on smoked glass in the quiet zone at the left. */
 
-.intro {
+.intro,
+.scene {
   position: relative;
   display: grid;
   align-items: center;
-  min-height: 88svh;
-  padding: calc(var(--header-h) + 3rem) 0 3rem;
-  background: linear-gradient(90deg, rgb(5 5 5 / 0.82) 0%, rgb(5 5 5 / 0.5) 38%, transparent 64%);
+  min-height: 100svh;
 }
 
-.col > * { max-width: min(32rem, 100%); }
+.intro { padding: calc(var(--header-h) + 3rem) 0 4rem; }
+.scene { padding: calc(var(--header-h) + 1.5rem) 0 2.5rem; }
+
+/* A soft shadow on the left so the opening words read against the lit stone. */
+.intro::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, rgb(5 5 5 / 0.62) 0%, rgb(5 5 5 / 0.28) 30%, transparent 50%);
+  pointer-events: none;
+}
+
+.col { position: relative; }
+/* The first plate's fin starts just short of the middle of the frame. */
+.col > * { max-width: min(38rem, 42vw); }
 
 .title {
   font-size: var(--step-5);
@@ -32,50 +46,135 @@
   list-style: none;
 }
 
-.plate {
-  position: relative;
+/* Caption at the left, picture at the right. In the 3D world the picture is
+   the plate itself, so only the caption column is filled: it is kept narrower
+   than the plate's left edge, which sits near 40% of the frame. */
+.piece {
   display: grid;
-  align-items: end;
-  min-height: 100svh;
-  padding-bottom: clamp(3rem, 12svh, 8rem);
-  background: linear-gradient(90deg, rgb(5 5 5 / 0.78) 0%, rgb(5 5 5 / 0.35) 36%, transparent 58%);
+  grid-template-columns: minmax(0, min(30rem, 36vw)) minmax(0, 1fr);
+  align-items: center;
+  column-gap: clamp(2rem, 5vw, 5rem);
 }
 
-.card { display: grid; gap: 0.9rem; justify-items: start; }
+/* A gallery label, not a page section: tighter than the default panel. */
+.piece .card {
+  grid-column: 1;
+  grid-row: 1;
+  display: grid;
+  grid-template-areas: "count" "name" "label" "detail" "action";
+  justify-items: start;
+  padding: clamp(1.5rem, 0.8rem + 1.6vw, 2.5rem);
+}
 
 .count {
+  grid-area: count;
+  margin-bottom: 1rem;
   color: var(--gold-text);
   font-family: var(--font-display);
   font-size: var(--step-2);
   font-style: italic;
+  font-variant-numeric: lining-nums tabular-nums;
+  line-height: 1;
 }
 
 .name {
-  font-size: var(--step-4);
-  line-height: 1;
-  letter-spacing: -0.016em;
+  grid-area: name;
+  font-size: var(--step-3);
+  line-height: 1.04;
+  letter-spacing: -0.014em;
 }
 
-.detail { color: var(--text-soft); font-size: var(--step-1); line-height: 1.5; margin-bottom: 0.75rem; }
+/* Brighter than the global caption style: the glass can have a lit plate behind it. */
+.label {
+  grid-area: label;
+  margin-top: 0.75rem;
+  color: var(--text-soft);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  line-height: 1.4;
+  text-transform: uppercase;
+}
 
-/* Shown only when the 3D gallery is unavailable. */
-.fallback {
+/* A project's brief can run long; the caption shows its opening and the link carries the rest. */
+.detail {
+  grid-area: detail;
+  display: -webkit-box;
+  margin-top: 1.1rem;
+  overflow: hidden;
+  color: var(--text-soft);
+  font-size: var(--step-0);
+  line-height: 1.55;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 4;
+  line-clamp: 4;
+}
+
+/* A long service name wraps instead of pushing the caption toward the plate. */
+.piece .action {
+  grid-area: action;
+  max-width: 100%;
+  margin-top: 1.6rem;
+  white-space: normal;
+}
+
+/* The photograph on its ivory mat, shown only when the 3D gallery is unavailable. */
+.picture {
+  grid-column: 2;
+  grid-row: 1;
+  padding: clamp(0.5rem, 1vw, 0.875rem);
+  background: var(--ivory);
+  box-shadow: 0 2.5rem 5rem -2.5rem rgb(0 0 0 / 0.85);
+}
+
+.frame {
   position: relative;
-  width: 100%;
-  aspect-ratio: 4 / 3;
-  margin-top: 1.25rem;
+  aspect-ratio: 64 / 45; /* the plate's own proportion (world/layout.ts PLATES) */
   overflow: hidden;
   background: var(--surface-2);
 }
 
-:global(html[data-world="on"]) .fallback { display: none; }
+:global(html[data-world="on"]) .picture { display: none; }
+
+/* Taller than wide: the camera centres the plate in the upper part of the
+   frame (world/engine.ts), so the caption goes below the picture. */
+@media (orientation: portrait) {
+  .intro,
+  .scene { align-items: end; }
+  .intro { padding-bottom: 2.5rem; }
+  .intro::before { background: linear-gradient(180deg, transparent 45%, rgb(5 5 5 / 0.7) 78%); }
+  .col > * { max-width: min(38rem, 100%); }
+
+  .piece {
+    grid-template-columns: minmax(0, 1fr);
+    row-gap: 1rem;
+  }
+  .picture { grid-column: 1; grid-row: auto; }
+  .piece .card {
+    grid-column: 1;
+    grid-row: auto;
+    max-width: 34rem;
+    /* The counter moves beside the label so the caption stays clear of the plate above it. */
+    grid-template-areas: "name name" "label count" "detail detail" "action action";
+    grid-template-columns: minmax(0, 1fr) auto;
+    column-gap: 1rem;
+    align-items: baseline;
+  }
+  .count { margin: 0.75rem 0 0; font-size: var(--step-1); }
+}
 
 @media (max-width: 860px) {
-  .intro { align-items: end; min-height: 70svh; background: linear-gradient(180deg, transparent, rgb(5 5 5 / 0.8) 60%); }
-  .plate {
-    padding-bottom: 2.5rem;
-    background: linear-gradient(180deg, transparent 38%, rgb(5 5 5 / 0.9) 68%);
-  }
-  .name { font-size: var(--step-3); }
-  .detail { font-size: var(--step-0); }
+  .title { font-size: var(--step-4); }
+  .lede { margin-top: 1.25rem; font-size: var(--step-0); }
+  .piece .card { padding: 1.25rem; }
+  .detail { margin-top: 0.75rem; }
+  .piece .action { margin-top: 1rem; }
+}
+
+/* The fixed call bar (components/site/MobileCallBar) covers the foot of a phone
+   screen; a caption resting on the bottom of its scene has to clear it. */
+@media (max-width: 860px) and (orientation: portrait) {
+  .intro,
+  .scene { padding-bottom: calc(72px + env(safe-area-inset-bottom) + 0.75rem); }
+  .scene { padding-top: calc(var(--header-h) + 1rem); }
 }

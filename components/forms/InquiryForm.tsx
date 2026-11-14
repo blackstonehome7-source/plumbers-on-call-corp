@@ -191,7 +191,6 @@ export function InquiryForm({ defaultService }: Props) {
   if (status === "success") {
     return (
       <div ref={successRef} tabIndex={-1} className={styles.success} aria-labelledby="inquiry-success-title">
-        <p className="eyebrow">Thank you</p>
         <h3 id="inquiry-success-title" className={`display-m ${styles.successTitle}`}>
           Request received
         </h3>
@@ -391,7 +390,7 @@ export function InquiryForm({ defaultService }: Props) {
       </div>
 
       <div className={styles.footer}>
-        <button type="submit" className={`btn btn--dark ${styles.submit}`} disabled={submitting} aria-busy={submitting}>
+        <button type="submit" className={`btn btn--gold ${styles.submit}`} disabled={submitting} aria-busy={submitting}>
           {submitting ? "Sending…" : "Send request"}
         </button>
         <p className={styles.note}>

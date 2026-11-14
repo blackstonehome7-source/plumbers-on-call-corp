@@ -1,0 +1,89 @@
+/* The line down the right edge of the Services page: six marks, one per floor. */
+
+.rail {
+  position: fixed;
+  z-index: 5;
+  top: 50%;
+  right: clamp(1rem, 0.4rem + 1.4vw, 2.25rem);
+  transform: translateY(-50%);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--dur-2) var(--ease-out);
+}
+
+.rail[data-visible] { opacity: 1; pointer-events: auto; }
+
+.rail ol {
+  position: relative;
+  display: grid;
+  gap: 0.35rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* The line itself. */
+.rail ol::before {
+  content: "";
+  position: absolute;
+  top: -1.25rem;
+  bottom: -1.25rem;
+  right: 0.5rem;
+  width: 1px;
+  background: linear-gradient(180deg, transparent, var(--gold) 12%, var(--gold) 88%, transparent);
+  opacity: 0.55;
+}
+
+.rail a {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  min-width: 44px;
+  min-height: 44px;
+  padding-right: 1.5rem;
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-decoration: none;
+  transition: color var(--dur-1) var(--ease-out);
+}
+
+/* The mark on the line. */
+.rail a::after {
+  content: "";
+  position: absolute;
+  right: calc(0.5rem - 3px);
+  width: 7px;
+  height: 7px;
+  border: 1px solid var(--gold);
+  border-radius: 50%;
+  background: var(--bg);
+  transition: background var(--dur-1) var(--ease-out), box-shadow var(--dur-2) var(--ease-out), transform var(--dur-2) var(--ease-out);
+}
+
+.num { opacity: 0; transform: translateX(6px); transition: opacity var(--dur-1) var(--ease-out), transform var(--dur-2) var(--ease-out); }
+
+.rail a:hover,
+.rail a:focus-visible,
+.rail a[aria-current] { color: var(--gold-light); }
+
+.rail a:hover .num,
+.rail a:focus-visible .num,
+.rail a[aria-current] .num { opacity: 1; transform: none; }
+
+.rail a[aria-current]::after {
+  background: var(--gold-light);
+  box-shadow: 0 0 0.75rem 0.1rem rgb(226 196 142 / 0.55);
+  transform: scale(1.3);
+}
+
+@media (max-width: 860px) {
+  .rail { display: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rail, .rail a, .rail a::after, .num { transition: none; }
+}

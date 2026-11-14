@@ -42,7 +42,7 @@ export function HomeHero() {
         </p>
       </div>
 
-      <a href="#standard" className={styles.scroll}>
+      <a href="#services" className={styles.scroll}>
         <span>Follow the line</span>
         <ArrowDown />
       </a>

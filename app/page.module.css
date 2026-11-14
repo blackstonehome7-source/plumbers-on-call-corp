@@ -1,239 +1,178 @@
-/* ---------- The standard ---------- */
+/* Home: five scenes along the line (DESIGN.md). The Name is in HomeHero; the four
+   below it are laid out here. Every scene carries its words on one glass panel,
+   in the left of the frame, and leaves the right to the world. */
 
-.standard {
+.scene {
   position: relative;
   display: grid;
   align-items: center;
-  min-height: 92svh;
-  padding-block: var(--section);
-  background: linear-gradient(90deg, rgb(5 5 5 / 0.72) 0%, rgb(5 5 5 / 0.4) 55%, transparent 100%);
+  min-height: 120svh;
+  padding-block: clamp(5rem, 10vw, 9rem);
 }
 
-.standardInner { display: grid; justify-items: start; }
-
-.statement {
-  max-width: 9ch;
-  font-size: var(--step-6);
-  line-height: 0.92;
-  letter-spacing: -0.025em;
+.sceneTitle {
+  font-size: var(--step-4);
+  line-height: 1.02;
+  letter-spacing: -0.018em;
 }
 
-.statement em { font-style: italic; color: var(--gold-light); }
+.sceneTitle em,
+.companyPanel h2 em,
+.reviewsTitle em { font-style: italic; color: var(--gold-light); }
 
-.standardBody {
-  max-width: 46ch;
-  margin: 2.25rem 0 2rem;
+.sceneLede {
+  max-width: 60ch;
+  margin-top: 1.5rem;
   color: var(--text-soft);
   font-size: var(--step-1);
-  line-height: 1.6;
+  line-height: 1.55;
 }
 
-/* ---------- Shared section head ---------- */
+/* ---------- Scene 2: the building ---------- */
 
-.head {
-  display: grid;
-  grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
-  gap: clamp(1.5rem, 5vw, 6rem);
-  align-items: end;
-  margin-bottom: clamp(2.5rem, 5vw, 4.5rem);
-}
-
-.head h2 { max-width: 15ch; }
-
-.num {
-  color: var(--gold-text);
-  font-size: 0.75rem;
-  font-weight: 600;
-  letter-spacing: 0.2em;
-}
-
-.all { margin-top: clamp(2rem, 4vw, 3.5rem); }
-
-/* ---------- Services index ---------- */
-
-.index {
-  margin: 0;
-  padding: 0;
-  list-style: none;
-  border-top: 1px solid var(--rule-strong);
-}
-
-.index li { border-bottom: 1px solid var(--rule); }
-
-.row {
+/* One viewport to arrive, then a stretch of scroll per floor while the panel holds. */
+.services {
+  --floor-scroll: 62svh;
   position: relative;
+  height: calc(100svh + 5 * var(--floor-scroll));
+}
+
+.stage {
+  position: sticky;
+  top: 0;
   display: grid;
-  grid-template-columns: 3.5rem minmax(0, 1.05fr) minmax(0, 1fr) 2rem;
-  gap: clamp(0.75rem, 2.5vw, 3rem);
   align-items: center;
-  padding: clamp(1.25rem, 2.4vw, 2.1rem) 0;
-  color: var(--text);
-  text-decoration: none;
-  transition: padding var(--dur-2) var(--ease-out);
+  height: 100svh;
+  padding-top: var(--header-h);
 }
 
-/* A hairline of brass draws across the row on hover: the line, again. */
-.row::after {
-  content: "";
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: -1px;
-  height: 1px;
-  background: var(--gold);
-  transform: scaleX(0);
-  transform-origin: left;
-  transition: transform 700ms var(--ease-out);
-}
+.servicesPanel { width: min(31rem, 40vw); }
+.servicesPanel .sceneTitle { margin-bottom: 1.5rem; font-size: var(--step-3); }
 
-.row:hover::after,
-.row:focus-visible::after { transform: scaleX(1); }
-.row:hover { padding-left: 0.75rem; }
-
-.name {
-  font-family: var(--font-display);
-  font-size: var(--step-4);
-  line-height: 1;
-  letter-spacing: -0.015em;
-  transition: color var(--dur-2) var(--ease-out);
-}
-
-.row:hover .name { color: var(--gold-light); }
-
-.summary { color: var(--text-muted); font-size: var(--step-0); line-height: 1.5; }
-
-.arrow {
-  width: 22px;
-  height: 22px;
-  color: var(--gold);
-  justify-self: end;
-  transition: transform var(--dur-2) var(--ease-out);
-}
-
-.row:hover .arrow { transform: translate(3px, -3px); }
-
-.emergency {
+.servicesFoot {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  gap: 2rem;
-  margin-top: clamp(2.5rem, 5vw, 4rem);
-  padding: clamp(1.75rem, 3.5vw, 3rem);
-  background: linear-gradient(120deg, rgb(201 164 101 / 0.12), rgb(201 164 101 / 0.02) 60%);
-  border: 1px solid rgb(201 164 101 / 0.35);
+  gap: 1rem 1.5rem;
+  margin-top: 1.5rem;
 }
 
-.emergency h3 { margin-top: 0.6rem; }
-.emergencyText { max-width: 50ch; margin-top: 0.9rem; color: var(--text-soft); }
-.emergencyActions { display: flex; flex-wrap: wrap; gap: 0.75rem; }
+/* The floors: marker i reaches the middle of the viewport when the camera is level with floor i. */
+.markers { position: absolute; inset: 0; pointer-events: none; }
+.markers span {
+  position: absolute;
+  top: calc(50svh + var(--i) * var(--floor-scroll));
+  left: 0;
+  width: 1px;
+  height: 1px;
+}
 
-/* ---------- Work plates ---------- */
+/* ---------- Scene 3: the standard ---------- */
+
+.standardPanel { width: min(38rem, 44vw); }
+
+.points {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0 clamp(1.25rem, 2.5vw, 2.25rem);
+  margin: 2rem 0 1.75rem;
+  padding: 0;
+  list-style: none;
+  border-top: 1px solid var(--rule);
+}
+
+.points li { padding: 1.1rem 0; border-bottom: 1px solid var(--rule); }
+.points h3 { font-size: var(--step-1); line-height: 1.2; }
+.points p { margin-top: 0.4rem; color: var(--text-soft); font-size: var(--step--1); line-height: 1.55; }
+
+/* ---------- Scene 4: the work ---------- */
+
+.workHead {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
+  align-items: end;
+  gap: 1.5rem clamp(2rem, 5vw, 4rem);
+}
+.workHead .sceneLede { margin-top: 0; font-size: var(--step-0); }
 
 .plates {
   display: grid;
-  grid-template-columns: 1.15fr 0.9fr 1fr;
-  gap: clamp(1rem, 2.5vw, 2.5rem);
-  align-items: start;
-  margin: 0;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: clamp(1rem, 2.4vw, 2rem);
+  margin: clamp(2rem, 4vw, 3rem) 0 2rem;
   padding: 0;
   list-style: none;
 }
 
-.plates li:nth-child(2) { margin-top: clamp(2rem, 7vw, 7rem); }
-.plates li:nth-child(3) { margin-top: clamp(1rem, 3vw, 3rem); }
-
 .plate {
   display: grid;
-  gap: 0.7rem;
+  gap: 0.35rem;
   color: var(--text);
   text-decoration: none;
 }
 
+/* The photograph on its mat of ivory stone, the logo's stone. */
 .plateMedia {
   position: relative;
   display: block;
-  aspect-ratio: 4 / 5;
+  aspect-ratio: 4 / 3;
+  margin-bottom: 0.75rem;
   overflow: hidden;
+  border: clamp(6px, 0.7vw, 10px) solid var(--ivory);
   background: var(--surface-2);
-  margin-bottom: 0.4rem;
+  box-shadow: 0 1.5rem 3rem -1.5rem rgb(0 0 0 / 0.9);
 }
-
-.plates li:nth-child(2) .plateMedia { aspect-ratio: 1 / 1; }
-
-.plateMedia img { transition: transform 1.4s var(--ease-out); }
-.plate:hover .plateMedia img { transform: scale(1.04); }
+.plateMedia img { transition: transform var(--dur-3) var(--ease-out); }
+.plate:hover .plateMedia img,
+.plate:focus-visible .plateMedia img { transform: scale(1.04); }
 
 .plateTitle { font-family: var(--font-display); font-size: var(--step-2); line-height: 1.1; }
+.plate:hover .plateTitle,
+.plate:focus-visible .plateTitle { color: var(--gold-light); }
 
-/* ---------- Why ---------- */
+/* ---------- Scene 5: the company ---------- */
 
-.why {
+.company { min-height: 90svh; }
+
+.companyPanel {
   display: grid;
-  grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr);
-  gap: clamp(2.5rem, 7vw, 8rem);
-  align-items: start;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: clamp(2rem, 5vw, 4.5rem);
 }
+.companyPanel article { display: grid; align-content: start; justify-items: start; gap: 1.1rem; }
+.companyPanel p { max-width: 46ch; color: var(--text-soft); }
 
-.whyHead { position: sticky; top: calc(var(--header-h) + 3rem); }
-.whyHead h2 { max-width: 12ch; }
+/* ---------- Reviews (shown only when verified reviews exist) ---------- */
 
-.whyList {
-  margin: 0;
-  padding: 0;
-  list-style: none;
-  border-top: 1px solid var(--rule-strong);
-}
-
-.whyList li {
-  display: grid;
-  grid-template-columns: 3.5rem 1fr;
-  column-gap: 1rem;
-  padding: clamp(1.5rem, 3vw, 2.4rem) 0;
-  border-bottom: 1px solid var(--rule);
-}
-
-.whyList .num { grid-row: span 2; padding-top: 0.7rem; }
-.whyList h3 { font-size: var(--step-2); }
-.whyList p { max-width: 52ch; margin-top: 0.7rem; color: var(--text-soft); }
-
-/* ---------- Company / territory ---------- */
-
-.bridgeGrid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: clamp(2.5rem, 7vw, 8rem);
-}
-
-.bridgeGrid article { display: grid; gap: 1.25rem; justify-items: start; align-content: start; }
-.bridgeGrid article + article { padding-left: clamp(1.5rem, 4vw, 5rem); border-left: 1px solid var(--rule); }
-.bridgeGrid h2 { max-width: 16ch; }
-.bridgeGrid p:not(:global(.eyebrow)) { max-width: 46ch; color: var(--text-soft); }
-.bridgeGrid :global(.eyebrow) { margin-bottom: 0; }
-
-/* ---------- Reviews ---------- */
+.reviewsTitle { margin-bottom: 2rem; }
 
 .reviews {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-  gap: 2.5rem;
+  gap: clamp(1.5rem, 3vw, 3rem);
+}
+.reviews figure { margin: 0; padding-top: 1.5rem; border-top: 1px solid var(--rule-strong); }
+.reviews blockquote {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: var(--step-2);
+  line-height: 1.3;
+}
+.reviews figcaption { margin-top: 1.25rem; color: var(--text-muted); font-size: var(--step--1); }
+
+/* ---------- Phones and portrait screens: no held stage, panels full width ---------- */
+
+@media (max-width: 860px), (max-aspect-ratio: 1/1) {
+  .scene { min-height: 0; padding-block: clamp(3rem, 12vw, 5rem); }
+  .services { height: auto; padding-block: clamp(3rem, 12vw, 5rem); }
+  .stage { position: static; height: auto; padding-top: 0; }
+  .markers { display: none; }
+  .servicesPanel, .standardPanel { width: auto; }
+  .points, .workHead, .companyPanel { grid-template-columns: 1fr; }
+  .plates { grid-template-columns: 1fr; }
 }
 
-.reviews figure { margin: 0; }
-.reviews blockquote { margin: 0; font-family: var(--font-display); font-size: var(--step-2); line-height: 1.25; }
-.reviews figcaption { margin-top: 1.25rem; color: var(--text-muted); font-size: 0.875rem; }
-
-@media (max-width: 900px) {
-  .head, .why, .bridgeGrid { grid-template-columns: 1fr; }
-  .whyHead { position: static; }
-  .bridgeGrid article + article { padding-left: 0; padding-top: 2.5rem; border-left: 0; border-top: 1px solid var(--rule); }
-  .row { grid-template-columns: 2.25rem minmax(0, 1fr) 1.5rem; }
-  .summary { grid-column: 2 / 3; grid-row: 2; }
-  .name { font-size: var(--step-3); }
-  .plates { grid-template-columns: 1fr; }
-  .plates li:nth-child(n) { margin-top: 0; }
-  .plates li:nth-child(n) .plateMedia { aspect-ratio: 4 / 3; }
-  .standard { min-height: 80svh; background: rgb(5 5 5 / 0.55); }
-  .emergencyActions { width: 100%; }
-  .emergencyActions :global(.btn) { flex: 1 1 220px; }
+@media (prefers-reduced-motion: reduce) {
+  .plateMedia img { transition: none; }
 }

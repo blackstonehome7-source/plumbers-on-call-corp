@@ -3,7 +3,6 @@ import {
   BoxGeometry,
   BufferAttribute,
   BufferGeometry,
-  CanvasTexture,
   CylinderGeometry,
   Group,
   HemisphereLight,
@@ -22,6 +21,7 @@ import {
 } from "three";
 import { Reflector } from "three/addons/objects/Reflector.js";
 import { FLOOR, LINE, MONO, SIGN, VALVE, WALL } from "../layout";
+import { createWashTexture } from "../wash";
 import type { FrameState, SceneModule, WorldCtx } from "../types";
 
 /* Tunables */
@@ -108,30 +108,7 @@ export function createName(ctx: WorldCtx): SceneModule & {
   /* ---- Light strips: a warm line under the slab and a cove along the wall base ---- */
   const stripMat = new MeshBasicMaterial({ color: 0xffd9a3 });
   stripMat.color.multiplyScalar(STRIP_GAIN);
-  // A soft fall-off painted once and reused as the wash each strip throws on the stone.
-  const gradient = document.createElement("canvas");
-  gradient.width = 128;
-  gradient.height = 128;
-  const g2d = gradient.getContext("2d");
-  if (g2d) {
-    // Falls away from the strip, and fades toward both ends so it has no hard edge.
-    const fall = g2d.createLinearGradient(0, 0, 0, 128);
-    fall.addColorStop(0, "rgba(255,255,255,1)");
-    fall.addColorStop(0.18, "rgba(255,255,255,0.38)");
-    fall.addColorStop(0.55, "rgba(255,255,255,0.08)");
-    fall.addColorStop(1, "rgba(255,255,255,0)");
-    g2d.fillStyle = fall;
-    g2d.fillRect(0, 0, 128, 128);
-    g2d.globalCompositeOperation = "destination-in";
-    const sides = g2d.createLinearGradient(0, 0, 128, 0);
-    sides.addColorStop(0, "rgba(0,0,0,0)");
-    sides.addColorStop(0.16, "rgba(0,0,0,1)");
-    sides.addColorStop(0.84, "rgba(0,0,0,1)");
-    sides.addColorStop(1, "rgba(0,0,0,0)");
-    g2d.fillStyle = sides;
-    g2d.fillRect(0, 0, 128, 128);
-  }
-  const washTex = new CanvasTexture(gradient);
+  const washTex = createWashTexture();
   const washMat = (opacity: number) =>
     new MeshBasicMaterial({ map: washTex, color: 0xffb877, transparent: true, opacity, blending: AdditiveBlending, depthWrite: false });
   const washes: { mat: MeshBasicMaterial; base: number }[] = [];

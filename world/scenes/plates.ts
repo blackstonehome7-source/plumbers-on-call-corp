@@ -1,8 +1,11 @@
 import {
   BoxGeometry,
+  type BufferGeometry,
   Color,
   CylinderGeometry,
   Group,
+  AdditiveBlending,
+  type Material,
   Mesh,
   MeshBasicMaterial,
   PlaneGeometry,
@@ -10,16 +13,24 @@ import {
   SphereGeometry,
   SpotLight,
 } from "three";
+import { mergeGeometries } from "three/addons/utils/BufferGeometryUtils.js";
 import { FLOOR, LINE, PLATES } from "../layout";
 import type { FrameState, SceneModule, WorldCtx } from "../types";
+import { createWashTexture } from "../wash";
 
 /**
- * The Plates (Our Work). Photographs mounted as lit plates on free-standing
- * stone fins, in a row on the polished floor to the right of the wall. A
- * brass rail along the floor links them back to the main line.
+ * The Plates (Our Work). Photographs hung as gallery pieces on free-standing
+ * stone fins, in a row on the polished floor to the right of the wall: an
+ * ivory stone mat, a brass picture light above and a blank brass plaque
+ * below. A brass rail along the floor links them back to the main line.
  */
 
 // ── Lights ──────────────────────────────────────────────────────────────
+/** Glow under each picture light (additive, like the strip washes on Home). */
+const GLOW_COLOR = 0xffb877;
+const GLOW_FULL = 0.5;
+const GLOW_HEIGHT = 3.4;
+const GLOW_RISE = 0.3;
 const WASH_COLOR = 0xffdcb0;
 const WASH_INTENSITY = 80;
 const WASH_ANGLE = 0.5;
@@ -39,13 +50,16 @@ const DEPTH_DISTANCE = 12;
 const DEPTH_OFFSET = { x: 3.5, y: 1.5, z: 2.5 };
 
 // ── Plates ──────────────────────────────────────────────────────────────
-/** Alternating vertical offset of the plates (even up, odd down). */
-const STAGGER = 0.18;
+/**
+ * Every plate hangs on one line, this far below PLATES.y. The whole piece
+ * (picture light above, plaque below) has to sit between the site header and
+ * the floor in the desktop framing, which leaves no room for a stagger.
+ */
+const HANG_DROP = 0.15;
+const HANG_Y = PLATES.y - HANG_DROP;
 /** Photograph brightness in focus, and the fraction of it left on the neighbours. */
 const PHOTO_FULL = 0.92;
 const PHOTO_DIM = 0.45;
-/** Lamp strip level on plates out of focus (1 = full). */
-const LAMP_DIM = 0.15;
 /** Gap between the fin face and a resting photograph. */
 const PHOTO_GAP = 0.02;
 /**
@@ -71,12 +85,33 @@ const MAT_DEPTH = 0.016;
 const BACK_HEIGHT = 9;
 const BACK_SETBACK = 0.5;
 const BACK_OVERRUN = 7;
-const HAIRLINE_HEIGHT = 0.012;
-const HAIRLINE_DROP = 0.18;
-const LAMP_WIDTH = PLATES.w * 0.42;
+
+// ── Picture light and plaque ────────────────────────────────────────────
+/** The bar: a slim brass tube across the top of the plate. */
+const BAR_WIDTH = PLATES.w * 0.56;
+const BAR_RADIUS = 0.03;
+/** Bar axis above the mat's top edge. */
+const BAR_RISE = 0.26;
+/** Bar axis proud of the fin face: out of reach of a lifted, turned photograph (PHOTO_LIFT plus its clearance). */
+const BAR_REACH = 0.32;
+/** The arm's wall mount: a small plate on the fin just above the mat. `rise` is its centre above the mat. */
+const MOUNT = { w: 0.2, h: 0.09, d: 0.022, rise: 0.085 } as const;
+const ARM_RADIUS = 0.012;
+const ARM_SEGMENTS = 8;
+/** The glowing strip under the bar. It hangs below the tube so it shows from the front. */
+const LAMP_WIDTH = BAR_WIDTH - 0.16;
 const LAMP_HEIGHT = 0.022;
 const LAMP_DEPTH = 0.03;
-const LAMP_RISE = 0.21;
+/** How far the strip sits up into the tube, so no gap shows where box meets cylinder. */
+const LAMP_TUCK = 0.008;
+/** Gold, and held under 1 so the strip glows without clipping to white. */
+const LAMP_COLOR = 0xffc47a;
+const LAMP_FULL = 0.95;
+/** Strip level on plates out of focus, as a fraction of LAMP_FULL. */
+const LAMP_DIM = 0.15;
+/** Blank brass plaque centred under the mat (`drop` below it), on a darker backing that shows as a rim. */
+const PLAQUE = { w: 0.46, h: 0.13, d: 0.014, drop: 0.14 } as const;
+const PLAQUE_RIM = 0.02;
 
 // ── Floor rail ──────────────────────────────────────────────────────────
 const RAIL_RADIUS = 0.022;
@@ -85,9 +120,6 @@ const RAIL_Z = 0.5;
 const RAIL_OVERRUN = 2;
 const TEE_RADIUS = 0.04;
 const ELBOW_RADIUS = 0.03;
-
-/** Vertical centre of plate `i`. */
-export const plateY = (i: number) => PLATES.y + (i % 2 === 0 ? STAGGER : -STAGGER);
 
 const clamp01 = (v: number) => Math.min(1, Math.max(0, v));
 
@@ -98,27 +130,21 @@ function fix<T extends Mesh>(mesh: T): T {
 }
 
 /**
- * A fin-sized box whose UVs keep the stone at one scale on every face and are
- * shifted per fin, so the veining neither stretches on the edges nor repeats
- * from fin to fin.
+ * One static mesh for every copy of a fitting, so each brass tone costs a
+ * single draw call however many plates hang on the wall.
  */
-function finGeometry(w: number, h: number, d: number, index: number): BoxGeometry {
-  const geo = new BoxGeometry(w, h, d);
-  const uv = geo.attributes.uv;
-  for (let i = 0; i < uv.count; i++) {
-    // Box faces come four vertices at a time: +x, -x, +y, -y, +z, -z.
-    const face = Math.floor(i / 4);
-    const su = face < 2 ? d / w : 1;
-    const sv = face === 2 || face === 3 ? d / h : 1;
-    uv.setXY(i, uv.getX(i) * su + index * 0.37, uv.getY(i) * sv + index * 0.23);
-  }
-  return geo;
+function fittings(parts: BufferGeometry[], material: Material): Mesh {
+  const mesh = new Mesh(mergeGeometries(parts), material);
+  for (const part of parts) part.dispose();
+  return fix(mesh);
 }
 
 interface Plate {
   photo: Mesh;
   photoMat: MeshBasicMaterial;
   lampMat: MeshBasicMaterial;
+  /** The glow the picture light throws down the stone around the plate. */
+  glowMat: MeshBasicMaterial;
   /** Focus weight applied last frame (0 = resting on the fin). */
   weight: number;
 }
@@ -134,24 +160,56 @@ export function createPlates(
   const count = images.length;
   const lastX = PLATES.x0 + PLATES.gap * Math.max(0, count - 1);
   const finFaceZ = PLATES.z - PHOTO_GAP;
+  const glowTex = createWashTexture();
+  const glowGeo = new PlaneGeometry(PLATES.w + FIN_MARGIN, GLOW_HEIGHT);
   const plateAspect = PLATES.w / PLATES.h;
+  const roundSegments = tier === "full" ? 16 : 10;
 
+  // Every plate hangs at the same height, so each part is one shared geometry.
+  const top = HANG_Y + PLATES.h / 2;
+  const matTop = top + MAT_MARGIN;
+  const matBottom = HANG_Y - PLATES.h / 2 - MAT_MARGIN;
+  const barY = matTop + BAR_RISE;
+  const barZ = finFaceZ + BAR_REACH;
+  const mountY = matTop + MOUNT.rise;
+  const plaqueY = matBottom - PLAQUE.drop - PLAQUE.h / 2;
+
+  // Fin: from the floor to a little above the plate, its face just behind the photograph.
+  // The stone is mapped in world space (materials.ts), so one box serves every fin.
+  const finH = top + FIN_RISE - FLOOR.y;
+  const finGeo = new BoxGeometry(PLATES.w + FIN_MARGIN, finH, FIN_DEPTH);
   const photoGeo = new PlaneGeometry(PLATES.w, PLATES.h);
   const matGeo = new BoxGeometry(PLATES.w + MAT_MARGIN * 2, PLATES.h + MAT_MARGIN * 2, MAT_DEPTH);
-  const hairlineGeo = new BoxGeometry(PLATES.w, HAIRLINE_HEIGHT, PHOTO_GAP);
   const lampGeo = new BoxGeometry(LAMP_WIDTH, LAMP_HEIGHT, LAMP_DEPTH);
-  const lampBase = mats.lamp.color.clone();
+  const lampBase = new Color(LAMP_COLOR).multiplyScalar(LAMP_FULL);
   const lampColor = new Color();
+
+  // Picture light and plaque, modelled once around x = 0 and copied to each plate below.
+  const barGeo = new CylinderGeometry(BAR_RADIUS, BAR_RADIUS, BAR_WIDTH, roundSegments)
+    .rotateZ(Math.PI / 2) // cylinder axis y → x
+    .translate(0, barY, barZ);
+  // The arm climbs from the mount on the fin, forward and up, to the back of the bar.
+  const armRise = barY - mountY;
+  const armRun = BAR_REACH - MOUNT.d;
+  const armGeo = new CylinderGeometry(ARM_RADIUS, ARM_RADIUS, Math.hypot(armRise, armRun), ARM_SEGMENTS)
+    .rotateX(Math.atan2(armRun, armRise)) // cylinder axis y → along the arm
+    .translate(0, (mountY + barY) / 2, finFaceZ + MOUNT.d + armRun / 2);
+  const mountGeo = new BoxGeometry(MOUNT.w, MOUNT.h, MOUNT.d).translate(0, mountY, finFaceZ + MOUNT.d / 2);
+  // The plaque stays blank: no lettering is ever modelled on the world's objects.
+  const plaqueGeo = new BoxGeometry(PLAQUE.w, PLAQUE.h, PLAQUE.d).translate(0, plaqueY, finFaceZ + PLAQUE.d / 2);
+  const plaqueBackGeo = new BoxGeometry(PLAQUE.w + PLAQUE_RIM * 2, PLAQUE.h + PLAQUE_RIM * 2, PLAQUE.d / 2).translate(
+    0,
+    plaqueY,
+    finFaceZ + PLAQUE.d / 4,
+  );
+  const fittingTemplates = [barGeo, armGeo, mountGeo, plaqueGeo, plaqueBackGeo];
+  const brassParts: BufferGeometry[] = [];
+  const brassDarkParts: BufferGeometry[] = [];
 
   const plates: Plate[] = images.map((image, i) => {
     const x = PLATES.x0 + PLATES.gap * i;
-    const y = plateY(i);
-    const top = y + PLATES.h / 2;
-    const bottom = y - PLATES.h / 2;
 
-    // Fin: from the floor to a little above the plate, its face just behind the photograph.
-    const finH = top + FIN_RISE - FLOOR.y;
-    const fin = new Mesh(finGeometry(PLATES.w + FIN_MARGIN, finH, FIN_DEPTH, i), mats.stoneHoned);
+    const fin = new Mesh(finGeo, mats.stoneHoned);
     fin.position.set(x, FLOOR.y + finH / 2, finFaceZ - FIN_DEPTH / 2);
 
     // Photograph: cover-fit by cropping the texture, never by stretching it.
@@ -165,28 +223,49 @@ export function createPlates(
     const photoMat = new MeshBasicMaterial({ map, toneMapped: true });
     photoMat.color.setScalar(PHOTO_FULL * PHOTO_DIM);
     const photo = new Mesh(photoGeo, photoMat);
-    photo.position.set(x, y, PLATES.z);
+    photo.position.set(x, HANG_Y, PLATES.z);
     // The mat rides with the photograph when it lifts and turns.
     const mat = new Mesh(matGeo, mats.ivory);
     mat.position.z = -MAT_DEPTH / 2 - 0.003;
     photo.add(mat);
 
-    const hairline = new Mesh(hairlineGeo, mats.brass);
-    hairline.position.set(x, bottom - HAIRLINE_DROP - HAIRLINE_HEIGHT / 2, finFaceZ + PHOTO_GAP / 2);
-
+    // The strip is the one fitting that changes (it dims out of focus), so it keeps its own mesh.
     const lampMat = mats.lamp.clone();
     lampMat.color.copy(lampBase).multiplyScalar(LAMP_DIM);
     const lamp = new Mesh(lampGeo, lampMat);
-    lamp.position.set(x, top + LAMP_RISE, finFaceZ + LAMP_DEPTH / 2);
+    lamp.position.set(x, barY - BAR_RADIUS - LAMP_HEIGHT / 2 + LAMP_TUCK, barZ);
 
-    group.add(fix(fin), fix(photo), fix(hairline), fix(lamp));
-    return { photo, photoMat, lampMat, weight: 0 };
+    brassParts.push(barGeo.clone().translate(x, 0, 0), plaqueGeo.clone().translate(x, 0, 0));
+    brassDarkParts.push(
+      armGeo.clone().translate(x, 0, 0),
+      mountGeo.clone().translate(x, 0, 0),
+      plaqueBackGeo.clone().translate(x, 0, 0),
+    );
+
+    group.add(fix(fin), fix(photo), fix(lamp));
+    // The picture light's glow on the fin: a halo of lit stone around the mat.
+    const glowMat = new MeshBasicMaterial({
+      map: glowTex,
+      color: GLOW_COLOR,
+      transparent: true,
+      opacity: GLOW_FULL * LAMP_DIM,
+      blending: AdditiveBlending,
+      depthWrite: false,
+    });
+    const glow = new Mesh(glowGeo, glowMat);
+    glow.position.set(x, top + GLOW_RISE - GLOW_HEIGHT / 2, finFaceZ + 0.0008);
+    glow.renderOrder = 1;
+    group.add(fix(glow));
+
+    return { photo, photoMat, lampMat, glowMat, weight: 0 };
   });
 
+  if (count > 0) group.add(fittings(brassParts, mats.brass), fittings(brassDarkParts, mats.brassDark));
+  for (const template of fittingTemplates) template.dispose();
+
   // ── Floor rail: tee on the main line, a short jog forward, then along the gallery ──
-  const railSegments = tier === "full" ? 16 : 10;
-  const unitRod = new CylinderGeometry(1, 1, 1, railSegments);
-  const unitBall = new SphereGeometry(1, railSegments, 10);
+  const unitRod = new CylinderGeometry(1, 1, 1, roundSegments);
+  const unitBall = new SphereGeometry(1, roundSegments, 10);
   const ball = (radius: number, z: number) => {
     const m = new Mesh(unitBall, mats.brass);
     m.scale.setScalar(radius);
@@ -241,6 +320,7 @@ export function createPlates(
 
       plate.photoMat.color.setScalar(PHOTO_FULL * (PHOTO_DIM + (1 - PHOTO_DIM) * weight));
       plate.lampMat.color.copy(lampColor.copy(lampBase).multiplyScalar(LAMP_DIM + (1 - LAMP_DIM) * weight));
+      plate.glowMat.opacity = GLOW_FULL * (LAMP_DIM + (1 - LAMP_DIM) * weight);
 
       // Only the plate in (or leaving) focus moves: it floats off the fin and turns toward the pointer.
       if (weight > 0 || plate.weight > 0) {

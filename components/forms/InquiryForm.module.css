@@ -1,6 +1,9 @@
+/* The form lives in a glass panel whose width follows the scene, not the
+   viewport, so its own layout answers to the panel (see @container below). */
 .form {
   display: grid;
   gap: 2.25rem;
+  container-type: inline-size;
 }
 
 .grid {
@@ -18,21 +21,21 @@
 .label {
   padding: 0;
   color: var(--text-soft);
-  font-size: 0.75rem;
+  font-size: var(--step--1);
   font-weight: 600;
-  letter-spacing: 0.14em;
+  letter-spacing: 0.12em;
   line-height: 1.4;
   text-transform: uppercase;
 }
 
 .optional {
-  color: var(--text-muted);
-  font-weight: 500;
+  color: var(--text-soft);
+  font-weight: 400;
   letter-spacing: 0.04em;
   text-transform: none;
 }
 
-/* Underline-style fields: hairline at rest, bronze when focused. */
+/* Underline-style fields: hairline at rest, a brass line and a breath of warm light when focused. */
 .input {
   width: 100%;
   min-height: 56px;
@@ -42,23 +45,32 @@
   border-radius: 0;
   background: transparent;
   color: var(--text);
+  caret-color: var(--gold-light);
   font-size: 1.0625rem; /* ≥ 16px: no iOS zoom on focus */
   line-height: 1.5;
   transition:
     border-color var(--dur-1) var(--ease-out),
-    box-shadow var(--dur-1) var(--ease-out);
+    box-shadow var(--dur-1) var(--ease-out),
+    background-color var(--dur-1) var(--ease-out);
 }
 
 .input:hover { border-bottom-color: var(--text-muted); }
 
 .input:focus-visible {
   outline: none;
-  border-bottom-color: var(--gold);
-  box-shadow: 0 1px 0 0 var(--gold);
+  border-bottom-color: var(--gold-light);
+  background: linear-gradient(0deg, rgb(226 196 142 / 0.1), transparent 70%);
+  box-shadow: 0 2px 0 0 var(--gold-light);
 }
 
 .input[aria-invalid="true"] { border-bottom-color: var(--danger); }
-.input[aria-invalid="true"]:focus-visible { box-shadow: 0 1px 0 0 var(--danger); }
+.input[aria-invalid="true"]:focus-visible {
+  background: linear-gradient(0deg, rgb(240 143 128 / 0.1), transparent 70%);
+  box-shadow: 0 2px 0 0 var(--danger);
+}
+
+/* Native option lists do not inherit the glass: give them the solid ground. */
+.select option { background: var(--surface); color: var(--text); }
 
 .selectWrap { position: relative; }
 
@@ -87,14 +99,14 @@
 }
 
 .hint {
-  color: var(--text-muted);
-  font-size: 0.875rem;
+  color: var(--text-soft);
+  font-size: var(--step--1);
 }
 
 .error {
   color: var(--danger);
-  font-size: 0.875rem;
-  font-weight: 500;
+  font-size: var(--step--1);
+  font-weight: 600;
 }
 
 .fieldset {
@@ -122,7 +134,7 @@
   border: 1px solid var(--rule-strong);
   border-radius: var(--radius);
   font-size: var(--step-0);
-  font-weight: 500;
+  font-weight: 400;
   cursor: pointer;
   transition:
     border-color var(--dur-1) var(--ease-out),
@@ -133,11 +145,11 @@
 
 .radio:has(input:checked) {
   border-color: var(--gold);
-  background: var(--bg);
+  background: rgb(201 164 101 / 0.12);
 }
 
 .radio:has(input:focus-visible) {
-  outline: 2px solid var(--gold);
+  outline: 2px solid var(--gold-light);
   outline-offset: 3px;
 }
 
@@ -180,8 +192,8 @@
 .submit:disabled::before { transform: scaleX(0); }
 
 .note {
-  color: var(--text-muted);
-  font-size: 0.875rem;
+  color: var(--text-soft);
+  font-size: var(--step--1);
 }
 
 .note a { color: var(--text); }
@@ -191,9 +203,12 @@
 .notice {
   display: grid;
   gap: 0.75rem;
-  padding: 1.5rem 1.5rem 1.5rem 1.75rem;
-  border-left: 2px solid var(--danger);
-  background: var(--bg);
+  padding: 1.5rem;
+  border: 1px solid rgb(240 143 128 / 0.6);
+  border-radius: var(--radius);
+  background:
+    linear-gradient(rgb(240 143 128 / 0.08), rgb(240 143 128 / 0.08)),
+    rgb(10 9 8 / 0.86);
   color: var(--text-soft);
 }
 
@@ -241,6 +256,11 @@
 }
 
 .success:focus-visible { outline-offset: 8px; }
+
+/* A narrow panel (beside the scene on a small laptop) stacks the fields too. */
+@container (max-width: 27rem) {
+  .grid { grid-template-columns: 1fr; }
+}
 
 @media (max-width: 640px) {
   .grid { grid-template-columns: 1fr; }

@@ -4,15 +4,19 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getProject, projects } from "@/content/projects";
 import { getService } from "@/content/services";
-import { PageHero } from "@/components/ui/PageHero";
 import { CtaBand } from "@/components/ui/CtaBand";
-import { pageMetadata } from "@/lib/seo";
+import { ArrowUpRight } from "@/components/ui/Icon";
+import { JsonLd } from "@/components/ui/JsonLd";
+import { breadcrumbJsonLd, pageMetadata } from "@/lib/seo";
 import styles from "./page.module.css";
 
 type Params = { slug: string };
 
 // Only real, documented projects get a page.
 export const dynamicParams = false;
+
+/** The wall hangs the first six projects: the same six the 3D world loads (components/world/WorldCanvas.tsx). */
+const WALL_PLATES = 6;
 
 export function generateStaticParams(): Params[] {
   return projects.map((p) => ({ slug: p.slug }));
@@ -32,58 +36,72 @@ export async function generateMetadata({ params }: { params: Promise<Params> }):
 
 export default async function ProjectPage({ params }: { params: Promise<Params> }) {
   const { slug } = await params;
-  const project = getProject(slug);
-  if (!project) notFound();
+  const index = projects.findIndex((p) => p.slug === slug);
+  if (index < 0) notFound();
+  const project = projects[index];
   const service = getService(project.category);
   const [cover, ...gallery] = project.photos;
+  // A project on the wall has its own plate in the 3D world; the camera faces it while the page is read.
+  const onWall = index < WALL_PLATES;
+  const facts = [service?.name, project.location, project.year].filter(Boolean).join(" · ");
 
   return (
     <>
-      <PageHero
-        variant="plain"
-        eyebrow={[service?.name, project.location, project.year].filter(Boolean).join(" · ")}
-        title={project.title}
-        crumbs={[
+      <JsonLd
+        data={breadcrumbJsonLd([
+          { name: "Home", path: "/" },
           { name: "Our Work", path: "/work" },
           { name: project.title, path: `/work/${project.slug}` },
-        ]}
+        ])}
       />
 
-      {cover && (
-        <div className={styles.cover}>
-          <Image src={cover.src} alt={cover.alt} fill preload sizes="100vw" style={{ objectFit: "cover" }} />
-        </div>
-      )}
+      <article className={`${styles.project} ${onWall ? styles.faced : ""}`} aria-labelledby="project-title">
+        {/* Pinned to the top of the page so the world keeps this project's plate in focus at every scroll position. */}
+        {onWall ? <span className={styles.mark} data-world-step={index} aria-hidden="true" /> : null}
+        <div className={`container ${styles.piece}`}>
+          {cover ? (
+            // The plate is the cover; this picture stands in when the 3D gallery, or a plate for this project, is missing.
+            <div className={`${styles.picture} ${onWall ? styles.onWall : ""}`}>
+              <div className={styles.frame}>
+                <Image src={cover.src} alt={cover.alt} fill sizes="(orientation: portrait) 92vw, 60vw" style={{ objectFit: "cover" }} />
+              </div>
+            </div>
+          ) : null}
 
-      <section className="section">
-        <div className={`container ${styles.story}`}>
-          <div>
-            <h2 className="eyebrow">The requirement</h2>
+          <div className={`panel ${styles.column}`}>
+            <h1 id="project-title" className={styles.title}>
+              {project.title}
+            </h1>
+            {facts ? <p className={styles.facts}>{facts}</p> : null}
             <p className={styles.lead}>{project.challenge}</p>
-          </div>
-          <div>
-            <h2 className="eyebrow">Work performed</h2>
+
+            <h2 className={styles.heading}>Work performed</h2>
             <ul className={styles.work}>
               {project.work.map((w) => (
                 <li key={w}>{w}</li>
               ))}
             </ul>
-            {project.outcome && (
+
+            {project.outcome ? (
               <>
-                <h2 className="eyebrow" style={{ marginTop: "2.5rem" }}>
-                  Outcome
-                </h2>
-                <p className="prose">{project.outcome}</p>
+                <h2 className={styles.heading}>Outcome</h2>
+                <p className={styles.body}>{project.outcome}</p>
               </>
-            )}
-            {service && (
-              <p className={styles.related}>
-                Related service: <Link href={`/services/${service.slug}`}>{service.name}</Link>
-              </p>
-            )}
+            ) : null}
+
+            <div className={styles.actions}>
+              {service ? (
+                <Link href={`/services/${service.slug}`} className={`btn ${styles.action}`}>
+                  {service.name} <ArrowUpRight />
+                </Link>
+              ) : null}
+              <Link href="/work" className="text-link">
+                All work <span className="text-link__rule" aria-hidden="true" />
+              </Link>
+            </div>
           </div>
         </div>
-      </section>
+      </article>
 
       {gallery.length > 0 && (
         <section className="section section--paper" aria-label="Project photographs">

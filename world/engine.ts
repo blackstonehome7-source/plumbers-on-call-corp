@@ -21,7 +21,7 @@ import { OutputPass } from "three/addons/postprocessing/OutputPass.js";
 import { RenderPass } from "three/addons/postprocessing/RenderPass.js";
 import { ShaderPass } from "three/addons/postprocessing/ShaderPass.js";
 import { UnrealBloomPass } from "three/addons/postprocessing/UnrealBloomPass.js";
-import { PLATES, PLUMB, ROOM_FOCUS, SECTION, SECTION_ROOMS, SIGN, VALVE } from "./layout";
+import { PLATES, PLUMB, ROOM_FOCUS, SECTION, SECTION_ROOMS, SIGN, VALVE, roomBottom } from "./layout";
 import { applyBaked, exportBakeable } from "./baked";
 import { createMaterials } from "./materials";
 import { createName } from "./scenes/name";
@@ -53,8 +53,16 @@ const GrainShader = {
 const INTRO_SECONDS = 3.6;
 const INTRO_REVEAL_AT = 2.5;
 
+/** Home: how many metres of world the frame spans while the building stands in its right two-thirds, and where it centres. */
+const HOME_BUILDING_FRAME = 16.5;
+const HOME_BUILDING_X = -2.94;
+/** Home: how close the camera comes to the main shut-off for the standard. */
+const HOME_VALVE_DISTANCE = 3.4;
+
 /** How far the camera stands from a room's back wall on the Services page. */
-const SECTION_DISTANCE = 11.5;
+const SECTION_DISTANCE = 9.6;
+/** How far the camera may move sideways before the frame leaves the building. */
+const SECTION_SWAY = 1.0;
 
 type Station = "home" | "section" | "room" | "plates" | "plumb" | "valve" | "quiet";
 type Route = { station: Station; index: number };
@@ -198,6 +206,8 @@ export function createWorld(
   /* ---------- DOM anchors ---------- */
   let signAnchor: { cx: number; cy: number; w: number } | null = null;
   let steps: { i: number; c: number }[] = [];
+  /** Named scenes of a page (data-world-anchor other than the sign): document y of their centre. */
+  let anchors: Record<string, number> = {};
   function measure() {
     const y = window.scrollY;
     const el = document.querySelector<HTMLElement>('[data-world-anchor="sign"]');
@@ -205,6 +215,13 @@ export function createWorld(
       const r = el.getBoundingClientRect();
       signAnchor = r.width > 0 ? { cx: r.left + r.width / 2, cy: r.top + y + r.height / 2, w: r.width } : null;
     } else signAnchor = null;
+    anchors = {};
+    for (const a of document.querySelectorAll<HTMLElement>("[data-world-anchor]")) {
+      const name = a.dataset.worldAnchor;
+      if (!name || name === "sign") continue;
+      const r = a.getBoundingClientRect();
+      anchors[name] = r.top + y + r.height / 2;
+    }
     steps = Array.from(document.querySelectorAll<HTMLElement>("[data-world-step]"), (s) => {
       const r = s.getBoundingClientRect();
       return { i: Number(s.dataset.worldStep), c: r.top + y + r.height / 2 };
@@ -227,6 +244,8 @@ export function createWorld(
   /* ---------- Poses ---------- */
   let route: Route = { station: "home", index: 0 };
   const tanHalf = (fov: number) => Math.tan(MathUtils.degToRad(fov / 2));
+  const blendT = new Vector3();
+  const blendP = new Vector3();
 
   function desired(r: Route, out: Pose) {
     const aspect = W / H;
@@ -254,6 +273,40 @@ export function createWorld(
         out.fov = fov;
         out.t.set(tx, ty, 0);
         out.p.set(tx, ty, d + SIGN.slabD);
+        if (tall) break;
+
+        // Below the Name the page has three more places (DESIGN.md, Home), and the
+        // camera moves between them as their scenes come to the middle of the screen.
+        const mid = s + H / 2;
+        const blend = (txb: number, tyb: number, tzb: number, pxb: number, pyb: number, pzb: number, w: number) => {
+          if (w <= 0) return;
+          out.t.lerp(blendT.set(txb, tyb, tzb), w);
+          out.p.lerp(blendP.set(pxb, pyb, pzb), w);
+          out.fov = MathUtils.lerp(out.fov, BASE_FOV, w);
+        };
+        // 2. The building in section, standing in the right two-thirds of the frame,
+        //    one floor at a time as the services list is scrolled.
+        const f = MathUtils.clamp(stepFocus(0), 0, SECTION.count - 1);
+        const by = SECTION.top - SECTION.floorH * (f + 0.5);
+        const bd = MathUtils.clamp(HOME_BUILDING_FRAME / (2 * tanHalf(BASE_FOV) * aspect), 14, 28);
+        // The frame never looks past the roof or the footing: at the top and bottom floors
+        // the camera holds and the light alone moves on.
+        const reach = bd * tanHalf(BASE_FOV);
+        const bottom = SECTION.top - SECTION.floorH * SECTION.count;
+        const ky = MathUtils.clamp(by - 0.2, Math.min(bottom - 0.6 + reach, SECTION.top + 0.7 - reach), SECTION.top + 0.7 - reach);
+        blend(HOME_BUILDING_X, ky, 0, HOME_BUILDING_X + 0.9, ky + 1.1, bd, smooth(H * 0.45, H, s));
+        // 3. The standard: close on the main shut-off at the foot of the line.
+        const main = ROOM_FOCUS[SECTION.count - 1];
+        if (main && anchors.standard !== undefined) {
+          const my = roomBottom(SECTION.count - 1) + main.y;
+          const mx = main.x - HOME_VALVE_DISTANCE * tanHalf(BASE_FOV) * aspect * 0.4;
+          blend(mx, my + 0.05, main.z, mx + 0.7, my + 0.3, main.z + HOME_VALVE_DISTANCE, smooth(anchors.standard - H * 0.95, anchors.standard - H * 0.15, mid));
+        }
+        // 4. The work and the company: back out to the whole of that last room, at rest.
+        if (anchors.gallery !== undefined) {
+          const cy = SECTION.top - SECTION.floorH * (SECTION.count - 0.5);
+          blend(-0.5, cy, 0, 1.2, cy + 0.55, 10.6, smooth(anchors.gallery - H * 0.95, anchors.gallery - H * 0.2, mid));
+        }
         break;
       }
       case "section": {
@@ -263,32 +316,40 @@ export function createWorld(
           out.t.set(0.2, cy - 0.2, 0);
           out.p.set(1.2, cy + 0.6, 23);
         } else {
-          // Inside the floor: the room fills the frame and its fixture sits right of the
-          // words (DESIGN.md rule 4). The aim glides from one room's fixture to the next.
+          // Inside the floor: the room fills the frame. Its fixture sits a third of the
+          // way in from one side and the words take the other (roomTextSide), so the
+          // camera glides across the building as it descends.
           const lo = MathUtils.clamp(Math.floor(f), 0, SECTION.count - 1);
           const hi = Math.min(lo + 1, SECTION.count - 1);
-          const fx = MathUtils.lerp(ROOM_FOCUS[lo]?.x ?? 0.3, ROOM_FOCUS[hi]?.x ?? 0.3, MathUtils.clamp(f - lo, 0, 1));
+          const t = MathUtils.clamp(f - lo, 0, 1);
           const half = tanHalf(BASE_FOV) * SECTION_DISTANCE * aspect;
-          const tx = MathUtils.clamp(fx * 0.55 - half * 0.26, -4.2, 1.5);
+          const aim = (i: number) => {
+            const fx = ROOM_FOCUS[i]?.x ?? 1.2;
+            return MathUtils.clamp(fx + (fx > 0 ? -1 : 1) * half * 0.36, -SECTION_SWAY, SECTION_SWAY);
+          };
+          const tx = MathUtils.lerp(aim(lo), aim(hi), smooth(0, 1, t));
           out.t.set(tx, cy - 0.15, -1.6);
-          out.p.set(tx + 0.9, cy + 0.3, -1.6 + SECTION_DISTANCE);
+          out.p.set(tx * 1.12, cy + 0.3, -1.6 + SECTION_DISTANCE);
         }
         break;
       }
       case "room": {
-        const cy = SECTION.top - SECTION.floorH * (r.index + 0.5) - s * 0.0012;
+        // The camera stays in the room for the whole page: a slight settle, never a descent.
+        const drift = 0.35 * smooth(0, 2 * H, s);
+        const cy = SECTION.top - SECTION.floorH * (r.index + 0.5) - drift;
         if (tall) {
           out.t.set(0.2, cy - 0.3, 0);
           out.p.set(0.9, cy + 0.3, 13.5);
         } else {
-          // A close look at the room's main fixture, set right of the words.
+          // A close look at the room's main fixture, set in the right third: the words and
+          // the glass reading column take the left.
           const focus = ROOM_FOCUS[r.index];
           if (focus) {
             const d = 6.6;
             const half = tanHalf(BASE_FOV) * d * aspect;
-            const fy = SECTION.top - SECTION.floorH * (r.index + 1) + focus.y - s * 0.0012;
-            out.t.set(focus.x - half * 0.34, fy, focus.z);
-            out.p.set(focus.x - half * 0.34 + 1.3, fy + 0.45, focus.z + d);
+            const fy = SECTION.top - SECTION.floorH * (r.index + 1) + focus.y - drift;
+            out.t.set(focus.x - half * 0.52, fy, focus.z);
+            out.p.set(focus.x - half * 0.52 + 1.3, fy + 0.45, focus.z + d);
           } else {
             out.t.set(-0.5, cy, 0);
             out.p.set(1.2, cy + 0.55, 10.6);
@@ -311,7 +372,9 @@ export function createWorld(
         break;
       }
       case "plumb": {
-        const drift = s * 0.0011;
+        // One instrument per scene: a fixed drop per viewport for the first scenes, then a slow drift.
+        const v = s / H;
+        const drift = PLUMB.sceneDrop * Math.min(v, PLUMB.scenes - 1) + 0.25 * Math.max(0, v - (PLUMB.scenes - 1));
         if (tall) {
           out.t.set(PLUMB.x, PLUMB.bobY + 1.15 - drift, 0);
           out.p.set(PLUMB.x + 0.35, PLUMB.bobY + 1.3 - drift, 8.2);
@@ -325,7 +388,8 @@ export function createWorld(
       case "valve": {
         const drift = s * 0.0009;
         if (tall) {
-          out.t.set(VALVE.x + 0.5, 0.5 - drift, 0);
+          // Pitched down so the valve and the floor line sit in the open top of a phone screen.
+          out.t.set(VALVE.x + 0.5, -2.6 - drift, 0);
           out.p.set(VALVE.x + 0.9, 0.7 - drift, 12.5);
         } else {
           // The slot of light right of the words, the valve inside the frame beside it.
@@ -335,9 +399,11 @@ export function createWorld(
         break;
       }
       default: {
-        const drift = s * 0.0009;
-        out.t.set(-3.6, 6.4 - drift, 0);
-        out.p.set(-3.1, 6.6 - drift, tall ? 14 : 10);
+        // Reading pages: calm stone between the Name below and the plumb above, with the
+        // line near the right edge. A small rise on scroll; the ivory slab never enters.
+        const rise = Math.min(s * 0.0009, 1.2);
+        out.t.set(-3.6, 7.6 + rise, 0);
+        out.p.set(-3.1, 7.8 + rise, tall ? 9 : 10);
       }
     }
   }

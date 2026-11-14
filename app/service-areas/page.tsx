@@ -1,11 +1,10 @@
 import Link from "next/link";
-import type { CSSProperties } from "react";
 import { company } from "@/content/company";
 import { services } from "@/content/services";
 import { PageHero } from "@/components/ui/PageHero";
 import { CtaBand } from "@/components/ui/CtaBand";
 import { TrackedLink } from "@/components/ui/TrackedLink";
-import { PhoneIcon } from "@/components/ui/Icon";
+import { ArrowUpRight, PhoneIcon } from "@/components/ui/Icon";
 import { pageMetadata } from "@/lib/seo";
 import styles from "./page.module.css";
 
@@ -39,10 +38,14 @@ const buildingTypes = [
 export default function ServiceAreasPage() {
   return (
     <>
+      {/* Reading template: the whole page is one glass column over the world. */}
       <PageHero
-        variant="banner"
-        eyebrow="Service areas"
-        title={`Serving ${company.region} and communities across ${company.state}.`}
+        variant="reading"
+        title={
+          <>
+            Serving {company.region} and communities across <em>{company.state}.</em>
+          </>
+        }
         lede={
           <p>
             We work throughout {company.region} and take on projects across {company.state}. If you are not
@@ -50,44 +53,36 @@ export default function ServiceAreasPage() {
           </p>
         }
         crumbs={[{ name: "Service Areas", path: "/service-areas" }]}
-        image="newEnglandHome"
         actions={
-          <TrackedLink href={company.phone.href} event="phone_click" placement="service-areas" className="btn btn--dark">
+          <TrackedLink href={company.phone.href} event="phone_click" placement="service-areas" className="btn btn--gold">
             <PhoneIcon /> Check your area · {company.phone.display}
           </TrackedLink>
         }
-      />
-
-      <section className="section section--paper" aria-labelledby="buildings-title">
-        <div className={`container ${styles.layout}`}>
-          <div className={styles.head}>
-            <p className="eyebrow" data-reveal>
-              Local knowledge
-            </p>
-            <h2 id="buildings-title" className="display-m" data-reveal>
-              The buildings we work in.
-            </h2>
-          </div>
+      >
+        <section aria-labelledby="buildings-title">
+          <h2 id="buildings-title" className="display-m">
+            The buildings we work in.
+          </h2>
           <div className={styles.list}>
-            {buildingTypes.map((b, i) => (
-              <article key={b.title} data-reveal style={{ "--reveal-i": i } as CSSProperties}>
+            {buildingTypes.map((b) => (
+              <article key={b.title}>
                 <h3>{b.title}</h3>
                 <p>{b.body}</p>
               </article>
             ))}
           </div>
-        </div>
-      </section>
+        </section>
 
-      <section className="section" aria-labelledby="area-services-title">
-        <div className="container">
-          <h2 id="area-services-title" className="display-m" data-reveal>
+        <section className={styles.block} aria-labelledby="area-services-title">
+          <h2 id="area-services-title" className="display-m">
             Services available across our area.
           </h2>
           <ul className={styles.services}>
             {services.map((s) => (
               <li key={s.slug}>
-                <Link href={`/services/${s.slug}`}>{s.name}</Link>
+                <Link href={`/services/${s.slug}`}>
+                  {s.name} <ArrowUpRight />
+                </Link>
               </li>
             ))}
           </ul>
@@ -95,8 +90,8 @@ export default function ServiceAreasPage() {
             Emergency service is available {company.availability}. For planned work outside {company.region},
             get in touch with the details and location and we will let you know.
           </p>
-        </div>
-      </section>
+        </section>
+      </PageHero>
 
       <CtaBand placement="service-areas" />
     </>

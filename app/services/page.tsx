@@ -7,7 +7,8 @@ import { JsonLd } from "@/components/ui/JsonLd";
 import { SiteImage } from "@/components/ui/SiteImage";
 import { TrackedLink } from "@/components/ui/TrackedLink";
 import { breadcrumbJsonLd, pageMetadata } from "@/lib/seo";
-import { SECTION_ROOMS } from "@/world/layout";
+import { SECTION_ROOMS, roomTextSide } from "@/world/layout";
+import { FloorRail } from "@/components/services/FloorRail";
 import styles from "./page.module.css";
 
 export const metadata = pageMetadata({
@@ -35,17 +36,19 @@ export default function ServicesPage() {
 
       <section className={styles.intro} aria-labelledby="services-title">
         <div className={`container ${styles.col}`}>
-          <h1 id="services-title" className={styles.title}>
-            One line runs through <em>every</em> building.
-          </h1>
-          <p className={styles.lede}>
-            Follow it down. From the finished bathroom on the top floor to the boiler room and the main
-            shut-off, this is the work we do at each level, for homes and for businesses across{" "}
-            {company.region}.
-          </p>
-          <a href="#level-1" className={styles.descend}>
-            <ArrowDown /> <span>Descend</span>
-          </a>
+          <div className={`panel ${styles.opening}`}>
+            <h1 id="services-title" className={styles.title}>
+              One line runs through <em>every</em> building.
+            </h1>
+            <p className={styles.lede}>
+              Follow it down. From the finished bathroom on the top floor to the boiler room and the main
+              shut-off, this is the work we do at each level, for homes and for businesses across{" "}
+              {company.region}.
+            </p>
+            <a href="#level-1" className={styles.descend}>
+              <ArrowDown /> <span>Descend</span>
+            </a>
+          </div>
         </div>
       </section>
 
@@ -53,7 +56,7 @@ export default function ServicesPage() {
         {rooms.map((s, i) => {
           const emergency = s.slug === "emergency-plumbing";
           return (
-            <li key={s.slug} id={`level-${i + 1}`} className={styles.level} data-world-step={i}>
+            <li key={s.slug} id={`level-${i + 1}`} className={styles.level} data-world-step={i} data-side={roomTextSide(i)}>
               <div className={`container ${styles.col}`}>
                 <article className={`panel ${styles.card}`} aria-labelledby={`svc-${s.slug}`}>
                   <p className={styles.where}>
@@ -88,6 +91,8 @@ export default function ServicesPage() {
           );
         })}
       </ol>
+
+      <FloorRail floors={rooms.map((s, i) => ({ id: `level-${i + 1}`, label: s.name }))} />
 
       <CtaBand placement="services" />
     </>

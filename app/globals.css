@@ -187,7 +187,7 @@ main:focus { outline: none; }
 }
 @supports (backdrop-filter: blur(1px)) {
   html[data-world="on"][data-tier="full"] .panel {
-    background: rgb(10 9 8 / 0.46);
+    background: rgb(10 9 8 / 0.56);
     backdrop-filter: blur(22px) saturate(1.2);
     -webkit-backdrop-filter: blur(22px) saturate(1.2);
   }

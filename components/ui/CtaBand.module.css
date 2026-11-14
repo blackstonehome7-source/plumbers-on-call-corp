@@ -1,31 +1,67 @@
+/* The closing call to action stands on the marble floor under a strip of warm
+   light (DESIGN.md, Shared), not on a black slab. Where the 3D world runs, its
+   stone shows through; where it does not, the same marble is laid in as a still. */
+
 .cta {
+  --wash-depth: clamp(6rem, 13vw, 11rem);
   position: relative;
+  isolation: isolate;
   padding-block: clamp(5rem, 11vw, 10rem);
-  background: linear-gradient(180deg, rgb(5 5 5 / 0.78), rgb(3 3 3 / 0.94));
-  border-top: 1px solid var(--rule);
+  /* Lit by the strip at the top edge, falling to shadow where the words begin. */
+  background:
+    linear-gradient(180deg, rgb(5 5 5 / 0.55) 0, rgb(5 5 5 / 0.88) var(--wash-depth), rgb(4 4 4 / 0.92) 100%),
+    url("/world/tex/marble-color.webp") 50% 0 / 960px auto,
+    var(--bg-2);
   color: var(--text);
   text-align: center;
   overflow: hidden;
 }
 
+/* The strip: a brass hairline along the top edge… */
 .cta::before {
   content: "";
   position: absolute;
-  top: 0;
-  left: 50%;
-  width: 1px;
-  height: clamp(3rem, 6vw, 5rem);
-  background: linear-gradient(var(--gold), transparent);
+  inset: 0 0 auto;
+  height: 1px;
+  background: linear-gradient(90deg, transparent 2%, var(--gold) 20%, var(--gold-light) 50%, var(--gold) 80%, transparent 98%);
+}
+
+/* …and the wash it throws down the stone, fading toward both ends like the
+   strip under the logo on Home. Behind the words, never over them. */
+.cta::after {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto;
+  z-index: -1;
+  height: calc(var(--wash-depth) * 1.2);
+  background: linear-gradient(180deg, rgb(255 184 119 / 0.2), rgb(255 184 119 / 0.07) 38%, transparent);
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 22%, #000 78%, transparent);
+  mask-image: linear-gradient(90deg, transparent, #000 22%, #000 78%, transparent);
+  pointer-events: none;
+}
+
+/* The world is running: let its stone carry the band. Without blur (phones) the
+   floor is denser so the words keep their contrast. */
+:global(html[data-world="on"]) .cta {
+  background: linear-gradient(180deg, rgb(6 5 4 / 0.5) 0, rgb(5 5 5 / 0.84) var(--wash-depth));
+}
+
+@supports (backdrop-filter: blur(1px)) {
+  :global(html[data-world="on"][data-tier="full"]) .cta {
+    background: linear-gradient(180deg, rgb(8 7 6 / 0.32) 0, rgb(5 5 5 / 0.64) var(--wash-depth));
+    backdrop-filter: blur(16px) saturate(1.15);
+    -webkit-backdrop-filter: blur(16px) saturate(1.15);
+  }
 }
 
 .inner { display: grid; justify-items: center; }
-
-.cta :global(.eyebrow) { color: var(--gold-light); }
 
 .title {
   max-width: 14ch;
   color: var(--text);
 }
+
+.title em { font-style: italic; color: var(--gold-light); }
 
 .text {
   max-width: 48ch;
@@ -45,7 +81,7 @@
 .small {
   margin-top: 2rem;
   color: var(--text-soft);
-  font-size: 0.875rem;
+  font-size: var(--step--1);
 }
 
 .small a { color: var(--text); overflow-wrap: anywhere; }

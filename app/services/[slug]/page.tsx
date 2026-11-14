@@ -106,12 +106,11 @@ export default async function ServicePage({ params }: { params: Promise<Params> 
         </section>
       ) : null}
 
+      {/* The reading column: on glass, beside the room's fixture (DESIGN.md, Services). */}
+      <div className={styles.reading}>
       {rest.length > 0 && (
         <section className="section section--paper">
           <div className={`container ${styles.overview}`}>
-            <p className="eyebrow" data-reveal>
-              Overview
-            </p>
             <div className={styles.overviewText}>
               {rest.map((p, i) => (
                 <p key={i} data-reveal style={{ "--reveal-i": i } as CSSProperties}>
@@ -126,9 +125,6 @@ export default async function ServicePage({ params }: { params: Promise<Params> 
       <section className="section" aria-labelledby="types-title">
         <div className="container">
           <div className={styles.sectionHead}>
-            <p className="eyebrow" data-reveal>
-              {isEmergency ? "What counts as urgent" : "Common projects"}
-            </p>
             <h2 id="types-title" className="display-m" data-reveal>
               {isEmergency ? "Problems that should not wait." : `What ${service.name.toLowerCase()} work usually involves.`}
             </h2>
@@ -136,7 +132,6 @@ export default async function ServicePage({ params }: { params: Promise<Params> 
           <ol className={styles.types}>
             {service.projectTypes.map((t, i) => (
               <li key={t.title} data-reveal style={{ "--reveal-i": i % 3 } as CSSProperties}>
-                <span className={styles.num}>{String(i + 1).padStart(2, "0")}</span>
                 <h3 className={styles.typeTitle}>{t.title}</h3>
                 <p>{t.detail}</p>
               </li>
@@ -148,9 +143,6 @@ export default async function ServicePage({ params }: { params: Promise<Params> 
       <section className="section section--dark" aria-labelledby="consider-title">
         <div className={`container ${styles.consider}`}>
           <div className={styles.considerHead}>
-            <p className="eyebrow" data-reveal>
-              {isEmergency ? "Right now" : "Before you decide"}
-            </p>
             <h2 id="consider-title" className="display-m" data-reveal>
               {isEmergency ? "What to do while you wait." : "Worth weighing first."}
             </h2>
@@ -173,9 +165,6 @@ export default async function ServicePage({ params }: { params: Promise<Params> 
               <SiteImage image="fixtureDetail" fill sizes="(max-width: 860px) 100vw, 40vw" />
             </div>
             <div>
-              <p className="eyebrow" data-reveal>
-                How it works
-              </p>
               <h2 id="process-title" className="display-m" data-reveal>
                 From first call to finished work.
               </h2>
@@ -195,9 +184,6 @@ export default async function ServicePage({ params }: { params: Promise<Params> 
       <section className="section" aria-labelledby="faq-title">
         <div className={`container ${styles.faqWrap}`}>
           <div>
-            <p className="eyebrow" data-reveal>
-              Questions
-            </p>
             <h2 id="faq-title" className="display-m" data-reveal>
               Asked before most {isEmergency ? "calls" : "projects"}.
             </h2>
@@ -219,7 +205,7 @@ export default async function ServicePage({ params }: { params: Promise<Params> 
       {related.length > 0 && (
         <section className="section section--tight section--paper" aria-labelledby="related-title">
           <div className="container">
-            <h2 id="related-title" className="eyebrow">
+            <h2 id="related-title" className={`display-s ${styles.relatedTitle}`}>
               Related services
             </h2>
             <ul className={styles.related}>
@@ -238,6 +224,8 @@ export default async function ServicePage({ params }: { params: Promise<Params> 
           </div>
         </section>
       )}
+
+      </div>
 
       <CtaBand
         placement={service.slug}

@@ -4,11 +4,13 @@ import {
   CatmullRomCurve3,
   Color,
   CylinderGeometry,
+  AdditiveBlending,
   Group,
   LatheGeometry,
   Mesh,
   MeshBasicMaterial,
   Object3D,
+  PlaneGeometry,
   PointLight,
   SphereGeometry,
   SpotLight,
@@ -21,6 +23,7 @@ import {
 import { LINE, ROOM_FOCUS, SECTION, roomBottom, roomCenter } from "../layout";
 import type { Materials } from "../materials";
 import type { FrameState, SceneModule, WorldCtx } from "../types";
+import { createWashTexture } from "../wash";
 
 /**
  * The Section (Services): a building cut in section like an architect's
@@ -38,7 +41,7 @@ import type { FrameState, SceneModule, WorldCtx } from "../types";
 const LIGHT_COLOR = 0xffc98f;
 
 /** Warm point light inside the active room. Offset is from the room's main fixture (ROOM_FOCUS). */
-const POINT_INTENSITY = 16;
+const POINT_INTENSITY = 9;
 const POINT_DISTANCE = 9;
 const POINT_DECAY = 2;
 const POINT_OFFSET = { x: 0.2, y: 0.8, z: 1.5 } as const;
@@ -55,6 +58,16 @@ const SPOT_OFFSET = { x: 4.5, y: 3.4, z: 9.5 } as const;
 const SPOT_AIM = { x: 0, y: 0, z: -1.2 } as const;
 
 const LAMP_COLOR = 0xe0a45c;
+/**
+ * Each room is lit like the Name on Home: a cove strip where the back wall meets
+ * the ceiling, the wash it throws down the marble and a pool of light on the floor.
+ * Opacities are for the room in focus; the others rest at LAMP_DIM of that.
+ */
+const WASH_COLOR = 0xffb877;
+const WASH_WALL = 0.36;
+const WASH_WALL_HEIGHT = 2.3;
+const WASH_FLOOR = 0.2;
+const WASH_FLOOR_DEPTH = 2.4;
 /** Lamp strip brightness of an inactive room (active room = 1). */
 const LAMP_DIM = 0.2;
 /** Seconds for the focus to glide to a new room (critically damped). */
@@ -257,6 +270,11 @@ function buildStructure(k: Kit): void {
     const top = roomBottom(i);
     k.box(mats.stoneHoned, IN_X * 2, SECTION.slab, FRONT_Z - WALL_Z, 0, top - SECTION.slab / 2, (FRONT_Z + WALL_Z) / 2);
     k.box(mats.brassDark, SECTION.width, 0.02, 0.014, 0, top - 0.014, FRONT_Z + 0.003);
+    // The underside is a matte ceiling: seen from below at a grazing angle, bare stone
+    // catches the room's lights as a cold grey band across the top of the frame.
+    if (i < SECTION.count - 1) {
+      k.box(mats.matte, IN_X * 2, 0.012, FRONT_Z - WALL_Z, 0, top - SECTION.slab - 0.006, (FRONT_Z + WALL_Z) / 2);
+    }
     // Sleeve where the riser passes through the slab.
     if (k.detail) k.cyl(mats.brassDark, 0.07, SECTION.slab + 0.08, LINE.x, top - SECTION.slab / 2, LINE.z);
   }
@@ -716,17 +734,33 @@ export function createSection(ctx: WorldCtx): SceneModule & { setActive(f: numbe
 
   buildStructure(kit);
 
-  // Rooms: one lamp strip under each ceiling (own material, dims independently).
+  // Rooms: one cove strip where the back wall meets the ceiling (own material, dims independently).
   // Gold, and below the bloom threshold: the strip glows, it never clips to white (DESIGN.md rule 2).
   const lampBase = new Color(LAMP_COLOR);
   const lamps: MeshBasicMaterial[] = [];
+  const washTex = createWashTexture();
+  const washMat = () =>
+    new MeshBasicMaterial({ map: washTex, color: WASH_COLOR, transparent: true, opacity: 0, blending: AdditiveBlending, depthWrite: false });
+  const washes: { wall: MeshBasicMaterial; floor: MeshBasicMaterial }[] = [];
   const paths: FlowPath[] = [];
   ROOM_BUILDERS.forEach((build, i) => {
     const y0 = roomBottom(i);
     const lamp = ctx.mats.lamp.clone();
     lamp.color.copy(lampBase).multiplyScalar(LAMP_DIM);
     lamps.push(lamp);
-    kit.box(lamp, 9.4, 0.03, 0.1, 0, y0 + CLEAR - 0.015, -1.2);
+    kit.box(lamp, IN_X * 2 - 0.5, 0.03, 0.05, 0, y0 + CLEAR - 0.03, WALL_Z + 0.04);
+    const wall = washMat();
+    const wallWash = new Mesh(new PlaneGeometry(IN_X * 2, WASH_WALL_HEIGHT), wall);
+    wallWash.position.set(0, y0 + CLEAR - 0.05 - WASH_WALL_HEIGHT / 2, WALL_Z + 0.012);
+    const floor = washMat();
+    const floorWash = new Mesh(new PlaneGeometry(IN_X * 2, WASH_FLOOR_DEPTH), floor);
+    floorWash.rotation.x = -Math.PI / 2;
+    floorWash.position.set(0, y0 + 0.008, WALL_Z + WASH_FLOOR_DEPTH / 2);
+    for (const m of [wallWash, floorWash]) {
+      m.renderOrder = 1;
+      group.add(m);
+    }
+    washes.push({ wall, floor });
     paths.push(toFlowPath(build(kit, y0, lamp)));
   });
 
@@ -809,7 +843,10 @@ export function createSection(ctx: WorldCtx): SceneModule & { setActive(f: numbe
     // Lamp strips: the room in focus glows, the others rest at LAMP_DIM.
     for (let i = 0; i < lamps.length; i++) {
       const glow = on * smooth01(1 - Math.abs(focus - i));
-      lamps[i].color.copy(lampBase).multiplyScalar((LAMP_DIM + (1 - LAMP_DIM) * glow) * presence);
+      const lit = (LAMP_DIM + (1 - LAMP_DIM) * glow) * presence;
+      lamps[i].color.copy(lampBase).multiplyScalar(lit);
+      washes[i].wall.opacity = WASH_WALL * lit;
+      washes[i].floor.opacity = WASH_FLOOR * lit;
     }
 
     // Beads travel the branch of the nearest room and fade out at the handover between rooms.

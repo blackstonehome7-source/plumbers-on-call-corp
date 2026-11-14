@@ -41,9 +41,9 @@
 .label {
   grid-column: 1;
   color: var(--gold-text);
-  font-size: 0.75rem;
+  font-size: var(--step--1);
   font-weight: 600;
-  letter-spacing: 0.24em;
+  letter-spacing: 0.18em;
   text-transform: uppercase;
 }
 
@@ -59,7 +59,8 @@
 
 .email { font-size: clamp(1.25rem, 0.9rem + 1.3vw, 2rem); }
 
-.action:hover .value { color: var(--gold-light); }
+.action:hover .value,
+.action:focus-visible .value { color: var(--gold-light); }
 
 .arrow {
   grid-column: 2;
@@ -71,4 +72,5 @@
   transition: transform var(--dur-2) var(--ease-out);
 }
 
-.action:hover .arrow { transform: translate(3px, -3px); }
+.action:hover .arrow,
+.action:focus-visible .arrow { transform: translate(3px, -3px); }

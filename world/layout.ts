@@ -52,7 +52,8 @@ export const SECTION_ROOMS = [
 export const PLATES = { x0: 9.5, gap: 4.4, y: 0.35, z: 0, w: 3.2, h: 2.25 } as const;
 
 /** The Plumb: a bob hanging from a pivot high above, in front of the wall. */
-export const PLUMB = { x: -2.1, z: 1.2, pivotY: 21, bobY: 12.3 } as const;
+/** About: one instrument per scene. The camera drops `sceneDrop` metres per viewport of scroll for the first `scenes` scenes. */
+export const PLUMB = { x: -2.1, z: 1.2, pivotY: 21, bobY: 12.3, sceneDrop: 2.6, scenes: 3 } as const;
 
 /** The Valve: a door slot in the wall with the line's branch ending at a lever valve. */
 export const VALVE = { x: -17.2, y: -0.25, slotW: 0.7, slotH: 3.8 } as const;
@@ -69,3 +70,11 @@ export const ROOM_FOCUS: ({ x: number; y: number; z: number } | null)[] = [
   { x: -3.0, y: 1.15, z: -3.0 }, // water heaters: the tank
   { x: -1.9, y: 1.05, z: 0.4 }, // emergency: the main shut-off
 ];
+
+/**
+ * Which side of the frame a room's words take on the Services page: opposite its
+ * fixture, so the text never covers the hero object (DESIGN.md rule 5).
+ */
+export function roomTextSide(i: number): "left" | "right" {
+  return (ROOM_FOCUS[i]?.x ?? 1) > 0 ? "left" : "right";
+}

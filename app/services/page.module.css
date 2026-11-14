@@ -10,15 +10,8 @@
 
 .intro { padding: calc(var(--header-h) + 3rem) 0 4rem; }
 
-/* A soft shadow on the left so the words always read against the building. */
-.intro::before,
-.levels::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(90deg, rgb(5 5 5 / 0.72) 0%, rgb(5 5 5 / 0.34) 30%, transparent 52%);
-  pointer-events: none;
-}
+/* The opening words sit on glass, like the floors below them. */
+.opening { display: grid; justify-items: start; }
 
 .col { position: relative; }
 .col > * { max-width: min(35rem, 100%); }
@@ -63,6 +56,10 @@
 }
 
 .card { display: grid; justify-items: start; }
+
+/* The words take the side opposite the room's fixture (world/layout.ts: roomTextSide). */
+.level[data-side="right"] .col { display: grid; justify-items: end; }
+.level[data-side="right"] .col > * { width: 100%; }
 
 .where {
   display: inline-flex;
@@ -125,9 +122,6 @@
 
 @media (max-width: 860px) {
   .intro, .level { align-items: end; padding-bottom: 2.5rem; }
-  .intro::before,
-  .levels::before { background: linear-gradient(180deg, transparent 0%, rgb(5 5 5 / 0.55) 38%, rgb(5 5 5 / 0.9) 100%); }
-  .levels::before { background: none; }
   .level { padding-top: 46svh; }
   .card {
     padding: 1.5rem 0 0;
